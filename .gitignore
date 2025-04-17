@@ -1,0 +1,8 @@
+# Exclude frontend folder
+/Fe/
+
+# Exclude volumes folder - contains runtime data
+/volumes/
+
+# Include all other folders
+# But keep their specific .gitignore rules
