@@ -6,8 +6,6 @@ from app.extencions import db
 from app.utils import Error, Success
 
 class AuthMiddleware(): 
-    def authenticate(): 
-        pass
     def adminRequired(): 
        user_id = get_jwt_identity()
 

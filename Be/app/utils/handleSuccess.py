@@ -8,9 +8,8 @@ class Success():
     def to_json(self): 
         sucess = { 
             'message' : self.message, 
-            'status' : self.status
+            'status' : self.status,
+            "payload": self.payload 
         }
-        if self.payload: 
-            sucess['payload'] = dict(self.payload)
         return jsonify(sucess)
         

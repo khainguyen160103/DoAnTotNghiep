@@ -4,7 +4,7 @@ from sqlalchemy import select
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, set_access_cookies, unset_jwt_cookies
 
 from app.schemas import UserSchemaFactory
-from app.extencions import db
+from app.extencions import db, cipher
 from app.utils import Error, Success
 from app.models import Account, Employee
 class AuthService:
@@ -24,24 +24,29 @@ class AuthService:
             error = Error("Username not correct", 400)
             return error.to_json(), 400
 
-        password_db = isUsernameExits.password
+        password_db = cipher.decrypt(isUsernameExits.password).decode()
         user_id = isUsernameExits.id
-        if not check_password_hash(password_db, password): 
+        print(password , password_db)
+        if password != password_db: 
             error = Error("Password not correct", 400)
             return error.to_json(), 400
         
         access_token = create_access_token(identity=user_id)
 
-        response = Success(message="Login successfully", payload={'token': access_token}, status=200).to_json()
+        response = make_response(Success(message="Login successfully", payload={'token': access_token}, status=200).to_json())
         
-        set_access_cookies(response, access_token, max_age=60*60*24*7) # 7 days
-        response.set_cookie( 'auth_status',  # Cookie chỉ để đánh dấu trạng thái đăng nhập
-        'true',         # Giá trị đơn giản
-        max_age=60*60*24*7,
-        secure=True,
-        httponly=False,  # Cho phép JS đọc cookie này
-        samesite='Lax',
-        path='/')
+        # set_access_cookies(response, access_token, max_age=60*60*24*7) # 7 days
+        response.set_cookie(
+            'access_token_cookie',
+            value=access_token,
+            max_age=60*60*24*7,  # 7 days
+            path='/',
+            domain=None,  # Thử None trước
+            secure=False,  # False cho development
+            httponly=False,
+            samesite='Lax'
+        )
+        print("Set-Cookie header:", response.headers.get('Set-Cookie'))
         return response, 200
 
     @staticmethod

@@ -1,15 +1,21 @@
 from marshmallow import fields, validates, INCLUDE , pre_load
 from sqlalchemy import select
 from werkzeug.security import generate_password_hash
+from cryptography.fernet import Fernet
 
-from app.extencions import ma,db
+from app.extencions import ma,db, cipher
 from app.models import Account, Employee
 from app.utils import Error
 from .baseSchema import BaseSchema
+
+
+
 class UserSchemaFactory: 
     ""
     ""
     ""
+
+
     @staticmethod
     def account_schema(hash_password=True, id_required=False, exclude_fields=None, include_only=None): 
         
@@ -55,7 +61,8 @@ class UserSchemaFactory:
             @pre_load
             def process_data(self, data, **kwargs): 
                 if self.hash_password and data['password']: 
-                    data['password'] = generate_password_hash(data['password'])
+                    bytePassword = data['password'].encode('utf-8')
+                    data['password'] = cipher.encrypt(bytePassword)
                 return data 
                 
         return AccountSchema()

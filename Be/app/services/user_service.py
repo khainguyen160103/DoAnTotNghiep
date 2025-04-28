@@ -3,12 +3,11 @@ from werkzeug.security import generate_password_hash
 from marshmallow import ValidationError
 from flask_jwt_extended import jwt_required , get_jwt_identity
 
-from app.extencions import db 
+from app.extencions import db , cipher
 from app.models import Account, Employee, Role, DayOff
 from app.utils import Error, Success
 from app.schemas import UserSchemaFactory
 class UserSerives: 
-    
     
     @staticmethod
     def create_user(json_data): 
@@ -43,7 +42,7 @@ class UserSerives:
                 status=200
             )
     
-            return success.to_json()
+            return success.to_json(), 200
 
         except ValidationError as err: 
             error = Error( 
@@ -51,7 +50,7 @@ class UserSerives:
                 status=400,
                 payload=err.messages
             )
-            return error.to_json()
+            return error.to_json(), 400
         except Exception as err: 
             print("Error", err)
             db.session.rollback()  # Ensure rollback on error
@@ -59,30 +58,31 @@ class UserSerives:
                 message="Something Error Here",
                 status=500
             )
-            return error.to_json()
+            return error.to_json() , 500
         
     @staticmethod
     def get_user_by_id(id): 
-        user = db.session.query(Account.username, Account.password, Employee.email , Employee.fullname , DayOff.DayOff_number.label('dayoff')).filter_by(id=id).join(Employee, Employee.id == Account.id).join(DayOff , DayOff.employee_id == Employee.id).first()
+        user = db.session.query(Account.username,Account.role_id, Account.password, Employee.email , Employee.fullname , DayOff.DayOff_number.label('dayoff')).filter_by(id=id).join(Employee, Employee.id == Account.id).join(DayOff , DayOff.employee_id == Employee.id).first()
         if not user: 
             return Error(
                 message="Not Found User",
                 status=404
-            ).to_json()
-        
+            ).to_json(), 404
+        print(user)
         data = { 
             "username": user.username,
             "password": user.password,
             "email": user.email,
             "fullname": user.fullname,
-            "dayOff": user.dayoff
+            "dayOff": user.dayoff,
+            "role": user.role_id
         }
     
         return Success(
             message="Successfully",
             status=200,
             payload=data
-        ).to_json()
+        ).to_json() , 200
         
     @staticmethod
     def delete_user(id): 
@@ -110,12 +110,13 @@ class UserSerives:
     def get_all_user(): 
         query = db.session.query(Account.id, Account.username ,Account.created_at, Account.isActived, Account.password,Employee.fullname,Employee.work_status, Employee.employee_type, Role.name.label('role')).join(Employee,Account.id == Employee.id).join(Role, Account.role_id == Role.id).all()
 
-        users = {
-            user_id : { 
+        users = [
+            { 
+                "id" : user_id,
                 "username": username,
                 "created_at": create_at,
                 "isActived": isActived,
-                "password": password,
+                "password": cipher.decrypt(password).decode(),
                 "fullname":fullname,
                 "work_status": work_status,
                 "employee_type": employee_type,
@@ -123,7 +124,7 @@ class UserSerives:
 
             }
             for user_id , username, create_at ,isActived, password,fullname, work_status, employee_type , role in query
-        }
+        ]
         
         return Success(
             message="Successfully",

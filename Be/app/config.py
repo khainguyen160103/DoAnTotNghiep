@@ -13,7 +13,19 @@ class Config:
         app.config["SQLALCHEMY_DATABASE_URI"] = self.database_url
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         # Set the secret key for the application
-        app.config['JWT_TOKEN_LOCATION'] = ['cookies', 'headers']
+
         app.config['JWT_SECRET_KEY'] = self.secret_key
-        app.config["JWT_COOKIE_SECURE"] = True
+        # config cookie 
+        app.config["JWT_COOKIE_SAMESITE"] = "Lax"
+        # app.config['JWT_TOKEN_LOCATION'] = ['cookies']
+        app.config['JWT_SECRET_KEY'] = self.secret_key
+        app.config["JWT_COOKIE_SECURE"] = False
+        app.config["JWT_ACCESS_TOKEN_EXPIRES"] = 60*60*24*7
         app.config["JWT_COOKIE_CSRF_PROTECT"] = False
+        app.config["JWT_COOKIE_HTTPONLY"] = False
+        app.config["JWT_SESSION_COOKIE"] = False
+        
+
+
+
+    

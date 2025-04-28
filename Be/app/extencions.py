@@ -4,6 +4,13 @@ from flask_migrate import Migrate
 from flask_marshmallow import Marshmallow
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
+from cryptography.fernet import Fernet
+import os
+
+key = os.environ.get('FERKEY')
+
+cipher = Fernet(key)
+
 class Base(DeclarativeBase): 
     pass
 migrate = Migrate()

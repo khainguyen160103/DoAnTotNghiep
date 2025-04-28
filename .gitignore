@@ -1,8 +1,48 @@
-# Exclude frontend folder
-/Fe/
-
-# Exclude volumes folder - contains runtime data
+# Các thư mục runtime không cần thiết
 /volumes/
 
-# Include all other folders
-# But keep their specific .gitignore rules
+# Node modules và các file cache trong Frontend
+/Fe/node_modules/
+/Fe/.next/
+/Fe/out/
+/Fe/.cache/
+/Fe/dist/
+/Fe/.env.local
+/Fe/.env.development.local
+/Fe/.env.test.local
+/Fe/.env.production.local
+/Fe/npm-debug.log*
+/Fe/yarn-debug.log*
+/Fe/yarn-error.log*
+
+# Python và Backend
+/BE/__pycache__/
+/BE/*.py[cod]
+/BE/*$py.class
+/BE/venv/
+/BE/.env
+/BE/.env.local
+/BE/.env.development
+/BE/.env.production
+/BE/instance/
+/BE/.pytest_cache/
+/BE/.coverage
+/BE/htmlcov/
+/BE/build/
+/BE/dist/
+/BE/*.egg-info/
+
+# IDE và Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+.DS_Store
+
+# Các file tạm và log
+*.log
+logs/
+*.tmp
+.temp

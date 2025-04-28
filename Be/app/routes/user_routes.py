@@ -8,7 +8,7 @@ from app.middleware import AuthMiddleware
 bpUser = Blueprint('user',__name__)
 
 # create user
-@bpUser.route('/',methods=['POST']) 
+@bpUser.route('/create',methods=['POST']) 
 @jwt_required()
 def createUser(): 
     admin_check = AuthMiddleware.adminRequired()
@@ -19,7 +19,7 @@ def createUser():
     return response
 
 # get all user
-@bpUser.route('/',methods = ['GET'])
+@bpUser.route('/all',methods = ['GET'])
 @jwt_required()
 def getAllUser(): 
     admin_check = AuthMiddleware.adminRequired()
@@ -46,9 +46,8 @@ def getUser(id):
 
 @bpUser.route('/me' , methods=["POST"])
 @jwt_required()
-def get_me(): 
+def getUserInfor(): 
     identity = get_jwt_identity()
-    print('identity',identity)
     response = UserSerives.get_user_by_id(identity)
     return response
     

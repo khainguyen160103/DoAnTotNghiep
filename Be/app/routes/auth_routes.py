@@ -1,5 +1,5 @@
 from flask import request , jsonify, Blueprint
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_current_user
 
 from app.services import AuthService
 
@@ -33,4 +33,18 @@ def update():
     data = request.get_json()
     response = AuthService.update(data)
     return response
+
+
+# protect route 
+# @bpAuth.route('/protect', methods=['GET'])
+# @jwt_required()
+# def protected(): 
+#     current_user = get_current_user()
+#     print(type(current_user))
+#     return jsonify( 
+#         { 
+#             "message": "user has permission",
+#             "user" : current_user
+#         }
+#     )
 
