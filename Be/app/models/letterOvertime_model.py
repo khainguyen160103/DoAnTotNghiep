@@ -1,12 +1,12 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import VARCHAR, Integer, ForeignKey
-
+from sqlalchemy import VARCHAR, Integer, ForeignKey, DateTime
+from datetime import timezone, datetime
 from app.extencions import db
 
 class letterOvertime(db.Model):
     __tablename__ = "letterOvertime"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    create_at: Mapped[str] = mapped_column(VARCHAR(50),nullable=False)
+    id: Mapped[str] = mapped_column(VARCHAR, primary_key=True)
+    create_at: Mapped[datetime] = mapped_column(DateTime , default=datetime.now(timezone.utc))
     title: Mapped[str] = mapped_column(VARCHAR(50),nullable=False)
     request_date: Mapped[str] = mapped_column(VARCHAR(50),nullable=False)
     start_at: Mapped[str] = mapped_column(VARCHAR(50),nullable=False)
