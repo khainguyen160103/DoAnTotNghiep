@@ -1,0 +1,20 @@
+# Set default behavior to automatically normalize line endings
+* text=auto
+
+# Explicitly declare text files to normalize on checkout
+*.py text
+*.ini text
+*.md text
+*.txt text
+*.mako text
+
+# Declare files that will always have CRLF line endings on checkout
+*.bat text eol=crlf
+
+# Denote all files that are truly binary and should not be modified
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.ico binary
