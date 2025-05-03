@@ -32,28 +32,18 @@ type NavItem = {
 const navItemsUser: NavItem[] = [
   {
     icon: <CalenderIcon />,
-    name: "Quản lý chấm công",
-    path: "/calendar",
+    name: "Chấm công",
+    path: "/attendance",
   },
   {
-    icon: <UserCircleIcon />,
-    name: "User Profile",
-    path: "/profile",
-  },
-
-  {
-    name: "Quản lý đơn",
+    name: "Đơn",
     icon: <ListIcon />,
-    subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
+    path: "/submissionForm",
   },
   {
-    name: "Tables",
-    icon: <TableIcon />,
-    subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  },
-  {
-    name: "Báo cáo thống kê",
+    name: "Bảng lương",
     icon: <PageIcon />,
+    path: '/payroll',
   }
   ]
 const navItemsAdmin: NavItem[] = [
@@ -65,27 +55,22 @@ const navItemsAdmin: NavItem[] = [
   {
     icon: <CalenderIcon />,
     name: "Quản lý chấm công",
-    path: "/calendar",
+    path: "/attendance",
   },
-  {
-    icon: <UserCircleIcon />,
-    name: "User Profile",
-    path: "/profile",
-  },
-
   {
     name: "Quản lý đơn",
     icon: <ListIcon />,
-    subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
+    path: "/submissionForm",
   },
-  {
-    name: "Tables",
-    icon: <TableIcon />,
-    subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
+    {
+    name: "Quản lý lương",
+    icon: <ListIcon />,
+    path: "/payroll"
   },
   {
     name: "Báo cáo thống kê",
     icon: <PageIcon />,
+    path: '/dashboard',
   },
 ];
 
