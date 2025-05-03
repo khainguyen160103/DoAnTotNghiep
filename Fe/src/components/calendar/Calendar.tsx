@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
+import { createRoot } from "react-dom/client";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -12,10 +13,16 @@ import {
 } from "@fullcalendar/core";
 import { useModal } from "@/hooks/useModal";
 import { Modal } from "@/components/ui/modal";
-
+import SelectTimeInput from "../form/input/TimeInput";
+import { TimeIcon } from "@/icons";
+import Input from "../form/input/InputField";
+import FileInputExample from "../form/form-elements/FileInputExample";
+import FileInput from "../form/input/FileInput";
 interface CalendarEvent extends EventInput {
   extendedProps: {
     calendar: string;
+    workHours?: string;
+    status?: string;
   };
 }
 
@@ -30,7 +37,9 @@ const Calendar: React.FC = () => {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const calendarRef = useRef<FullCalendar>(null);
   const { isOpen, openModal, closeModal } = useModal();
+  const [showFileInput, setShowFileInput] = useState(false);
 
+  
   const calendarsEvents = {
     Danger: "danger",
     Success: "success",
@@ -41,28 +50,61 @@ const Calendar: React.FC = () => {
   useEffect(() => {
     // Initialize with some events
     setEvents([
-      {
-        id: "1",
-        title: "Event Conf.",
-        start: new Date().toISOString().split("T")[0],
-        extendedProps: { calendar: "Danger" },
-      },
-      {
-        id: "2",
-        title: "Meeting",
-        start: new Date(Date.now() + 86400000).toISOString().split("T")[0],
-        extendedProps: { calendar: "Success" },
-      },
-      {
-        id: "3",
-        title: "Workshop",
-        start: new Date(Date.now() + 172800000).toISOString().split("T")[0],
-        end: new Date(Date.now() + 259200000).toISOString().split("T")[0],
-        extendedProps: { calendar: "Primary" },
-      },
+      // {
+      //   id: "1",
+      //   title: "Event Conf.",
+      //   start: new Date().toISOString().split("T")[0],
+      //   extendedProps: { calendar: "Danger" },
+      // },
+      // {
+      //   id: "2",
+      //   title: "Meeting",
+      //   start: new Date(Date.now() + 86400000).toISOString().split("T")[0],
+      //   extendedProps: { calendar: "Success" },
+      // },
+      // {
+      //   id: "3",
+      //   title: "Workshop",
+      //   start: new Date(Date.now() + 172800000).toISOString().split("T")[0],
+      //   end: new Date(Date.now() + 259200000).toISOString().split("T")[0],
+      //   extendedProps: { calendar: "Primary" },
+      // },
     ]);
   }, []);
-
+  useEffect(() => {
+  setEvents([
+    {
+      id: "1",
+      time: "08:23 - 17:45",
+      start: new Date().toISOString().split("T")[0],
+      extendedProps: {
+        calendar: "Danger",
+        workHours: "1",
+        status: "Đi muộn - Về sớm",
+      },
+    },
+    {
+      id: "2",
+      time: "08:45 - 17:15",
+      start: new Date(Date.now() + 86400000).toISOString().split("T")[0],
+      extendedProps: {
+        calendar: "Warning",
+        workHours: "0.84",
+        status: "Nghỉ",
+      },
+    },
+    {
+      id: "3",
+      time: "08:23 - 20:15",
+      start: new Date(Date.now() + 172800000).toISOString().split("T")[0],
+      extendedProps: {
+        calendar: "Success",
+        workHours: "1.35",
+        status: "Tăng ca - Làm thêm",
+      },
+    },
+  ]);
+}, []);
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     resetModalFields();
     setEventStartDate(selectInfo.startStr);
@@ -128,7 +170,7 @@ const Calendar: React.FC = () => {
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
           headerToolbar={{
-            left: "prev,next addEventButton",
+            left: "prev,next",
             center: "title",
             right: "dayGridMonth,timeGridWeek,timeGridDay",
           }}
@@ -137,14 +179,10 @@ const Calendar: React.FC = () => {
           select={handleDateSelect}
           eventClick={handleEventClick}
           eventContent={renderEventContent}
-          customButtons={{
-            addEventButton: {
-              text: "Add Event +",
-              click: openModal,
-            },
-          }}
+          
         />
       </div>
+     
       <Modal
         isOpen={isOpen}
         onClose={closeModal}
@@ -152,96 +190,26 @@ const Calendar: React.FC = () => {
       >
         <div className="flex flex-col px-2 overflow-y-auto custom-scrollbar">
           <div>
-            <h5 className="mb-2 font-semibold text-gray-800 modal-title text-theme-xl dark:text-white/90 lg:text-2xl">
-              {selectedEvent ? "Edit Event" : "Add Event"}
+            <h5 className="mb-2 font-semibold text-gray-800 modal-title text-theme-xl dark:text-white/90 text-center lg:text-2xl">
+              {selectedEvent ? "Chỉnh sửa Công" : "Thêm Công"}
             </h5>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Plan your next big moment: schedule or edit an event to stay on
-              track
-            </p>
           </div>
           <div className="mt-8">
-            <div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Event Title
-                </label>
-                <input
-                  id="event-title"
-                  type="text"
-                  value={eventTitle}
-                  onChange={(e) => setEventTitle(e.target.value)}
-                  className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                />
-              </div>
-            </div>
             <div className="mt-6">
-              <label className="block mb-4 text-sm font-medium text-gray-700 dark:text-gray-400">
-                Event Color
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                Thời gian vào 
               </label>
-              <div className="flex flex-wrap items-center gap-4 sm:gap-5">
-                {Object.entries(calendarsEvents).map(([key, value]) => (
-                  <div key={key} className="n-chk">
-                    <div
-                      className={`form-check form-check-${value} form-check-inline`}
-                    >
-                      <label
-                        className="flex items-center text-sm text-gray-700 form-check-label dark:text-gray-400"
-                        htmlFor={`modal${key}`}
-                      >
-                        <span className="relative">
-                          <input
-                            className="sr-only form-check-input"
-                            type="radio"
-                            name="event-level"
-                            value={key}
-                            id={`modal${key}`}
-                            checked={eventLevel === key}
-                            onChange={() => setEventLevel(key)}
-                          />
-                          <span className="flex items-center justify-center w-5 h-5 mr-2 border border-gray-300 rounded-full box dark:border-gray-700">
-                            <span
-                              className={`h-2 w-2 rounded-full bg-white ${
-                                eventLevel === key ? "block" : "hidden"
-                              }`}  
-                            ></span>
-                          </span>
-                        </span>
-                        {key}
-                      </label>
-                    </div>
-                  </div>
-                ))}
+              <div className="relative">
+                 <Input type="time" />
               </div>
             </div>
 
             <div className="mt-6">
               <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                Enter Start Date
+                Thời gian ra
               </label>
               <div className="relative">
-                <input
-                  id="event-start-date"
-                  type="date"
-                  value={eventStartDate}
-                  onChange={(e) => setEventStartDate(e.target.value)}
-                  className="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                />
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                Enter End Date
-              </label>
-              <div className="relative">
-                <input
-                  id="event-end-date"
-                  type="date"
-                  value={eventEndDate}
-                  onChange={(e) => setEventEndDate(e.target.value)}
-                  className="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                />
+                 <Input type="time" />
               </div>
             </div>
           </div>
@@ -251,15 +219,23 @@ const Calendar: React.FC = () => {
               type="button"
               className="flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto"
             >
-              Close
+              Đóng
             </button>
+            {selectedEvent ? ( <button
+              onClick={closeModal}
+              type="button"
+              className="flex w-full justify-center rounded-lg border border-gray-300 bg-red-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto"
+            >
+              Xóa
+            </button>) : ""}
             <button
               onClick={handleAddOrUpdateEvent}
               type="button"
               className="btn btn-success btn-update-event flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 sm:w-auto"
             >
-              {selectedEvent ? "Update Changes" : "Add Event"}
+              {selectedEvent ? "Cập nhật" : "Lưu"}
             </button>
+            
           </div>
         </div>
       </Modal>
@@ -268,14 +244,27 @@ const Calendar: React.FC = () => {
 };
 
 const renderEventContent = (eventInfo: EventContentArg) => {
+  console.log(eventInfo.event);
+  const statusColorClass = eventInfo.event.extendedProps.calendar === "Danger"
+      ? "text-red-500"
+      : eventInfo.event.extendedProps.calendar === "Warning"
+      ? "text-yellow-500"
+      : eventInfo.event.extendedProps.calendar === "Success"
+      ? "text-green-500"
+      : "text-blue-500";
   const colorClass = `fc-bg-${eventInfo.event.extendedProps.calendar.toLowerCase()}`;
   return (
     <div
-      className={`event-fc-color flex fc-event-main ${colorClass} p-1 rounded-sm`}
-    >
-      <div className="fc-daygrid-event-dot"></div>
-      <div className="fc-event-time">{eventInfo.timeText}</div>
-      <div className="fc-event-title">{eventInfo.event.title}</div>
+      className={`event-fc-color flex-col justify-center items-center flex fc-event-main p-1 rounded-sm`}
+    > 
+      <div className="flex fc-event-title  ">
+            <p className="mr-1 text-sm font-semibold text-gray-800"> {eventInfo.event.extendedProps.time} </p>
+            <span className="black"><TimeIcon  /></span>
+          
+      </div>
+      <div className="text-lg font-bold text-gray-900 font-bold text-center">{eventInfo.event.extendedProps.workHours}</div>
+      <div className={`text-sm font-medium text-center ${statusColorClass}`}>{eventInfo.event.extendedProps.status}</div>
+
     </div>
   );
 };

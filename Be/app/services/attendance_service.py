@@ -116,8 +116,6 @@ class AttendanceService:
                                 "employee_id": row.get("Mã_nhân_viên"),
                                 "attendance_status_id": 1 if time_in and time_out and round(round((datetime.strptime(time_out,"%H:%M:%S") - datetime.strptime(time_in,"%H:%M:%S")).total_seconds()/3600) / 8 , 2) < 1 else None,  # Giả sử trạng thái là 1
                             }
-                        if time_in and time_out:
-                            print(f"Record created: {round(round((datetime.strptime(time_out,"%H:%M:%S") - datetime.strptime(time_in,"%H:%M:%S")).total_seconds()/3600) / 8 , 2)}")  # Debug: In bản ghi đã tạo
                         attendance_records.append(record)
             # Chuyển DataFrame thành danh sách các dictionary
             data = df.to_dict(orient='records')

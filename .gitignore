@@ -1,6 +1,5 @@
 # Các thư mục runtime không cần thiết
-/volumes/
-
+/volumes/db/
 # Node modules và các file cache trong Frontend
 /Fe/node_modules/
 /Fe/.next/
