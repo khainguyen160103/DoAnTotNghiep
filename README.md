@@ -1,31 +1,18 @@
-# Graduation Project
+# DoAnTotNghiep
 
-This repository contains the components of the graduation project except for the frontend code.
+## Cài đặt và chạy dự án
 
-## Project Structure
+### Yêu cầu
 
-- `Be/` - Backend services built with Flask and PostgreSQL
-- `volumes/` - Persistent data storage (not included in git repository)
-- [Other folders in your project structure]
+- Docker và Docker Compose
+- Git
 
-## Getting Started
+### Các bước cài đặt
 
-Each component has its own setup instructions in its respective folder.
+1. Clone repository:
+2. Chạy ứng dụng với Docker Compose:
+3. Kiểm tra trạng thái các container:
+4. Truy cập ứng dụng:
 
-- [Backend Setup](./Be/README.md)
-- [Other components]
-
-## Repository Structure
-
-This repository contains all project components except for the frontend, which is maintained in a separate repository.
-
-## Development Workflow
-
-1. Clone this repository
-2. Follow the setup instructions for each component you want to work with
-3. Make your changes
-4. Commit and push to the appropriate branch
-
-## Additional Resources
-
-[Add any additional resources or documentation links here]
+- Backend API: http://localhost:5000
+- Database: PostgreSQL trên cổng 5432
