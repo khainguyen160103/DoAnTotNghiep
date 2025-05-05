@@ -1,47 +1,133 @@
-# Các thư mục runtime không cần thiết
-/volumes/db/
-# Node modules và các file cache trong Frontend
-/Fe/node_modules/
-/Fe/.next/
-/Fe/out/
-/Fe/.cache/
-/Fe/dist/
-/Fe/.env.local
-/Fe/.env.development.local
-/Fe/.env.test.local
-/Fe/.env.production.local
-/Fe/npm-debug.log*
-/Fe/yarn-debug.log*
-/Fe/yarn-error.log*
+# Docker volumes
+volumes/db/
+volumes/db/**/*
 
-# Python và Backend
-/BE/__pycache__/
-/BE/*.py[cod]
-/BE/*$py.class
-/BE/venv/
-/BE/.env
-/BE/.env.local
-/BE/.env.development
-/BE/.env.production
-/BE/instance/
-/BE/.pytest_cache/
-/BE/.coverage
-/BE/htmlcov/
-/BE/build/
-/BE/dist/
-/BE/*.egg-info/
 
-# IDE và Editor files
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Flask
+instance/
+.webassets-cache
+
+# Environment
+.env
+.venv
+venv/
+ENV/
+venv.bak/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Migrations
+# migrations/versions/
+
+# IDE
 .idea/
 .vscode/
 *.swp
 *.swo
-*.sublime-workspace
-*.sublime-project
+*.swn
 .DS_Store
 
-# Các file tạm và log
-*.log
+# Logs
 logs/
-*.tmp
-.temp
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+tmp/
+temp/
+
+# Local configuration
+config.local.py
+*.local.py
+```
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Flask
+instance/
+.webassets-cache
+
+# Environment
+.env
+.venv
+venv/
+ENV/
+venv.bak/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Migrations
+# migrations/versions/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+tmp/
+temp/
+
+# Local configuration
+config.local.py
+*.local.py
+```

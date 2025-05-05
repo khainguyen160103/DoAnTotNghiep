@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState,useCallback } from "react";
+import React, { useEffect, useRef, useState,useCallback , useMemo} from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -79,6 +79,17 @@ const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
   const {isAdmin , isLoading, user} = useAuth()
+
+  const { menuItems, isMenuReady } = useMemo(() => {
+   if (isLoading) {
+     return { menuItems: [], isMenuReady: false };
+   }
+   
+   return { 
+     menuItems: isAdmin() ? navItemsAdmin : navItemsUser,
+     isMenuReady: true 
+   };
+ }, [isLoading, isAdmin])
   const renderMenuItems = (
     navItems: NavItem[],
     menuType: "main" 
@@ -205,6 +216,25 @@ const AppSidebar: React.FC = () => {
     </ul>
   );
 
+  const renderContent = () => {
+     if (!isMenuReady) {
+       return (
+         <ul className="flex flex-col gap-4">
+           {Array(5).fill(0).map((_, index) => (
+             <li key={index} className="px-3">
+               <div className="flex items-center gap-3">
+                 <div className="w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                 <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-24 animate-pulse"></div>
+               </div>
+             </li>
+           ))}
+         </ul>
+       );
+     }
+     
+     return renderMenuItems(menuItems, "main");
+   };
+
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
     index: number;
@@ -327,7 +357,7 @@ const AppSidebar: React.FC = () => {
                   <HorizontaLDots />
                 )}
               </h2>
-              {isAdmin() ?  renderMenuItems(navItemsAdmin, "main") : renderMenuItems(navItemsUser, "main")}
+               {renderContent()}
             </div>
 
             <div className="">

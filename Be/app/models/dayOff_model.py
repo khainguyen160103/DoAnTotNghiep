@@ -5,7 +5,7 @@ from app.extencions import db
 
 class DayOff(db.Model):
     __tablename__ = "dayOff"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[str] = mapped_column(VARCHAR, primary_key=True)
     DayOff_number: Mapped[int] = mapped_column(Integer, nullable=False)
     DayOff_year: Mapped[int] = mapped_column(Integer, nullable=False)
     DayOff_month: Mapped[int] = mapped_column(Integer, nullable=False)

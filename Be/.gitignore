@@ -1,3 +1,8 @@
+# Docker volumes
+volumes/db/
+volumes/db/**/*
+
+
 # Python
 __pycache__/
 *.py[cod]

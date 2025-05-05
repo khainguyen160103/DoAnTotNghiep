@@ -2,3 +2,4 @@ from .userSchema import UserSchemaFactory
 from .letterLeaveSchema import LetterLeaveSchema
 from .letterOvertimeSchema import LetterOvertimeSchema
 from .letterVertificationSchema import LetterVertificationSchema
+from .dayoffSchema import DayOffSchema

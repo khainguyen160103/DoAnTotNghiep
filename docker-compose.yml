@@ -32,4 +32,4 @@ services:
     volumes:
       - ./Be:/app
     working_dir: /app
-    command: sh -c "flask db upgrade && python Server.py"
+    command: "python Server.py"
