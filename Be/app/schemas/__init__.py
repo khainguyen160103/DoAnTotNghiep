@@ -3,3 +3,4 @@ from .letterLeaveSchema import LetterLeaveSchema
 from .letterOvertimeSchema import LetterOvertimeSchema
 from .letterVertificationSchema import LetterVertificationSchema
 from .dayoffSchema import DayOffSchema
+from .payrollSchema import PayrollSchema
