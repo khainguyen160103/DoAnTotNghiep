@@ -28,3 +28,43 @@ export interface AuthResponse {
     }
     status: number | null
 }
+
+export interface FormSubmissionData {
+  letterLeaves: Array<{
+    create_at: string;
+    end_at: string;
+    id: string;
+    letter_status_id: number;
+    [key: string]: any; // Nếu có thêm các trường khác
+  }>;
+  letterOvertimes: Array<{
+    create_at: string;
+    end_at: string;
+    id: string;
+    employee_id: string;
+    letter_status_id: number;
+    [key: string]: any; // Nếu có thêm các trường khác
+  }>;
+  letterVertifications: Array<{
+    create_at: string;
+    id: string;
+    letter_status_id: number;
+    note: string;
+    [key: string]: any; // Nếu có thêm các trường khác
+  }>;
+}
+
+
+export interface  FormData {
+        create_at : string,
+        employee_id: string,
+        end_at?:string,
+        id: string
+        letter_status_id: number,
+        note: string,
+        request_date?: string,
+        start_at?: string,
+        title: string,
+        type_date_ot_id?: number
+  
+}

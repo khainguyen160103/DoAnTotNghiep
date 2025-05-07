@@ -98,34 +98,37 @@ class FormSubmissionService:
             ).to_json(), 500
     
     @staticmethod
-    def update_form():
+    def update_form(json_data):
         try:
-            # Tìm form theo id trong cả 3 loại
-            letter_ver = db.session.get(letterVertification, json_data["id"])
-            letter_leave = db.session.get(letterLeave, json_data["id"])
-            letter_ot = db.session.get(letterOvertime, json_data["id"])
+          # Tìm form theo id trong cả 3 loại
+            form = None
+            form_type = None
 
-            # Nếu không tìm thấy trong bất kỳ loại đơn nào
-            if not letter_ver and not letter_leave and not letter_ot:
+            if db.session.get(letterVertification, json_data["id"]):
+                form = db.session.get(letterVertification, json_data["id"])
+                form_type = "letterVertification"
+            elif db.session.get(letterLeave, json_data["id"]):
+                form = db.session.get(letterLeave, json_data["id"])
+                form_type = "letterLeave"
+            elif db.session.get(letterOvertime, json_data["id"]):
+                form = db.session.get(letterOvertime, json_data["id"])
+                form_type = "letterOvertime"
+
+            # Nếu không tìm thấy form
+            if not form:
                 return Error(
                     message="ID not found in any form type",
                     status=404
                 ).to_json(), 404
 
-            # Cập nhật dữ liệu nếu tìm thấy
-            if letter_ver:
-                for key, value in json_data.items():
-                    setattr(letter_ver, key, value)
-            elif letter_leave:
-                for key, value in json_data.items():
-                    setattr(letter_leave, key, value)
-            elif letter_ot:
-                for key, value in json_data.items():
-                    setattr(letter_ot, key, value)
+            # Cập nhật dữ liệu
+            for key, value in json_data.items():
+                if hasattr(form, key):
+                    setattr(form, key, value)
 
             db.session.commit()
             return Success(
-                message="Form updated successfully",
+                message=f"{form_type} updated successfully",
                 status=200
             ).to_json(), 200
         except Exception as e:

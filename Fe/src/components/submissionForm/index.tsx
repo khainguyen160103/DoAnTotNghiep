@@ -1,13 +1,25 @@
 "use client"
 import FormSubmisstion from "../tables/FormSubmisionTable"
 import { HeaderFormSubmission } from "../header/HeaderFormSubmission"
+import { useFetch } from "@/hooks/useFetch"
+import Spinner from "../ui/spinner/spinner"
+import { toast } from "react-toastify"
+
+
 export const SubmissionForm = () => {
-    return <> 
+    const { data, error, isLoading, mutate } = useFetch("form/all")
+  
     
-        <HeaderFormSubmission  options={[{ value: "option1", label: "Option 1" }, { value: "option2", label: "Option 2" }]} handleSelectChange={(value) => console.log(value)} />
-        <FormSubmisstion 
-            users={[]} 
-            mutate={async () => { /* Add your mutation logic here */ }} 
-        />
-    </>
+    return <div className="flex justify-between mb-2.5 flex-col">
+        <HeaderFormSubmission mutate={mutate} />
+        
+        {data && !error && !isLoading && (<FormSubmisstion 
+                data={data.payload} 
+                isloading={isLoading}
+                mutate={mutate} 
+                />)
+            } 
+        {error && toast.error("Lỗi khi tải dữ liệu")}
+         </div> 
+
 } 

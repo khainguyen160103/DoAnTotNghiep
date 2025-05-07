@@ -46,7 +46,7 @@ class UserSerives:
 
         except ValidationError as err: 
             error = Error( 
-                message= "Validation Failed",
+                message=str(err),
                 status=400,
                 payload=err.messages
             )
@@ -55,7 +55,7 @@ class UserSerives:
             print("Error", err)
             db.session.rollback()  # Ensure rollback on error
             error = Error(
-                message="Something Error Here",
+                message=str(err),
                 status=500
             )
             return error.to_json() , 500

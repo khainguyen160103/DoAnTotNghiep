@@ -11,7 +11,7 @@ def create_form_ver():
     data = request.get_json()
     id = str(uuid.uuid4())
     data['id'] = id
-    data['letter_status_id'] = 1
+    data['letter_status_id'] = 2
     response = FormSubmissionService.create_form_ver(data);
     return response
 
@@ -38,9 +38,10 @@ def delete_form(id):
     response = FormSubmissionService.delete_form(id);
     return response
 
-@bpForm.route('/update', methods=['PATCH'])
-def update_form(): 
-    data = request.get_json()
+@bpForm.route('/update/<id>', methods=['PATCH'])
+def update_form(id): 
+    data = request.get_json() 
+    data['id'] = id
     response = FormSubmissionService.update_form(data);
     return response
 

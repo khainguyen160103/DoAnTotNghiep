@@ -2,17 +2,27 @@
 import { useState } from "react";
 import SearchBar from "../ui/search/SearchUser";
 import Button from "../ui/button/Button";
+import { useModal } from "@/hooks/useModal";
+import ModalAddForm from "../ui/modal/ModalAddForm";
 interface HeaderDashboardProps {
-  options: { value: string; label: string }[];
-  handleSelectChange: (value: string) => void;
-} 
+  mutate: () => Promise<any>;
+}
 
-export const HeaderFormSubmission = ({ options , handleSelectChange }: HeaderDashboardProps) => {
+import { useAuth } from "@/context/AuthContext"; 
 
+export const HeaderFormSubmission = ({ mutate }: HeaderDashboardProps) => {
+  const {isAdmin} = useAuth()
+  const { openModal , isOpen , closeModal} = useModal();
+
+  const handleAddForm = () => {
+    openModal();
+  }
   return (
-    <div className="flex items-center justify-between px-4 py-2 bg-white shadow-md">     
+    <div className="flex items-center justify-between  py-2 ">     
         <SearchBar />
-        <Button>+ Thêm mới</Button>
+
+        {isAdmin() && <Button onClick={handleAddForm}>+ Thêm mới</Button>}
+        <ModalAddForm isOpen={isOpen} onClose={closeModal} mutate={mutate} />
       </div>
   );
 }

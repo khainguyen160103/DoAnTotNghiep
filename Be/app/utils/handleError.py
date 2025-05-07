@@ -13,4 +13,3 @@ class Error(Exception):
         if self.payload:
             error_dict = dict(self.payload)
         return jsonify(error_dict)
-    
