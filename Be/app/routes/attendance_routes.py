@@ -33,8 +33,7 @@ def addAttendance():
     response = AttendanceService.add_attendance(data)
     return response
 
-@bpAttendance.route('/allByMonth', methods=['GET'])
-def getAllByMonth(): 
-    data = request.get_json()
-    response = AttendanceService.get_attendance_by_employee_id_and_month_year(data)
+@bpAttendance.route('/allByMonth/<id>/<year>/<month>', methods=['GET'])
+def getAllByMonth(id , year, month): 
+    response = AttendanceService.get_attendance_by_employee_id_and_month_year(id , year, month)
     return response

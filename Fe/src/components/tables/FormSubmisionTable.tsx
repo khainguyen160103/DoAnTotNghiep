@@ -82,6 +82,17 @@ export default function FormSubmisstion(props: { data: FormSubmissionData;isload
 
     }
   } 
+  const sortedLetterOvertimes = [...letterOvertimes].sort(
+  (a, b) => new Date(b.create_at).getTime() - new Date(a.create_at).getTime()
+);
+
+const sortedLetterVertifications = [...letterVertifications].sort(
+  (a, b) => new Date(b.create_at).getTime() - new Date(a.create_at).getTime()
+);
+
+const sortedLetterLeaves = [...letterLeaves].sort(
+  (a, b) => new Date(b.create_at).getTime() - new Date(a.create_at).getTime()
+);
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
       <div className="max-w-full overflow-x-auto">
@@ -125,7 +136,7 @@ export default function FormSubmisstion(props: { data: FormSubmissionData;isload
 
             {/* Table Body */}
            { !isloading && <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              {!isloading && letterOvertimes.map((letter) => (
+              {!isloading && sortedLetterOvertimes.map((letter) => (
                 <TableRow key={letter.id}>
                   <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                     {letter.id}
@@ -230,14 +241,14 @@ export default function FormSubmisstion(props: { data: FormSubmissionData;isload
                 </TableRow>
               ))}
 
-              {!isloading && letterVertifications.map((letter) => (
+              {!isloading && sortedLetterVertifications.map((letter) => (
                 <TableRow key={letter.id}>
                   <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                     {letter.id}
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                    <Badge color="primary" variant="light" size="md">
-                      Đơn Tăng Ca
+                    <Badge color="dark" variant="light" size="md">
+                      Đơn Xác Nhận
                     </Badge>
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
@@ -335,14 +346,14 @@ export default function FormSubmisstion(props: { data: FormSubmissionData;isload
                 </TableRow>
               ))}
 
-              {!isloading && letterLeaves.map((letter) => (
+              {!isloading && sortedLetterLeaves.map((letter) => (
                 <TableRow key={letter.id}>
                   <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                     {letter.id}
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                    <Badge color="primary" variant="light" size="md">
-                      Đơn Tăng Ca
+                    <Badge color="light" variant="light" size="md">
+                      Đơn Nghỉ Phép
                     </Badge>
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">

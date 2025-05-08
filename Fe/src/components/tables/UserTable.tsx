@@ -58,7 +58,7 @@ export default function UserTable() {
     console.log(response.data); // Kiểm tra phản hồi từ API
     
     if(response.status === 200) {
-      await mutate('http://127.0.0.1:5000/api/user/all')
+      await mutate()
       toast.success("Thêm người dùng thành công")
     }
     closeModal(); // Đóng modal sau khi lưu người dùng mới

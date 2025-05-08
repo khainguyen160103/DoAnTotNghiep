@@ -68,3 +68,15 @@ export interface  FormData {
         type_date_ot_id?: number
   
 }
+
+export interface AttendanceType { 
+      attendance_date: string,
+      attendance_status_id: number,
+      employee_id: string,
+      id: string,
+      note: string,
+      time_in: string,
+      time_out: string,
+      total_overtime: number
+      workHours: number
+}

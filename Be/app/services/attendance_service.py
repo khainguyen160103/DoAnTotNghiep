@@ -10,6 +10,22 @@ from app.extencions import db
 import uuid
 from sqlalchemy import and_, or_
 
+def calculate_work_hours_and_overtime(time_in, time_out):
+    if time_in and time_out:
+        # Chuyển đổi time_in và time_out thành datetime
+        today = datetime.today()
+        time_in_datetime = datetime.combine(today, time_in)
+        time_out_datetime = datetime.combine(today, time_out)
+
+        # Tính toán thời gian làm việc
+        work_duration = time_out_datetime - time_in_datetime
+        work_hours = work_duration.total_seconds() / 3600  # Chuyển đổi giây thành giờ
+
+        # Tính overtime
+        total_overtime = round(work_hours / 8, 2) - 1 if work_hours > 8 else None
+        return round(work_hours / 8, 2), total_overtime
+    return None, None
+
 class AttendanceService:   
     @staticmethod 
     def  upload_attendance_file(file):
@@ -107,6 +123,7 @@ class AttendanceService:
 
                         # Tạo bản ghi
                         if time_in and time_out:
+                            
                             record = { 
                                 "attendance_date": f"{year}-{month:02d}-{int(day):02d}",  # Tạo ngày từ cột
                                 "time_in": time_in,
@@ -190,14 +207,14 @@ class AttendanceService:
             ).to_json(), 400
         
     @staticmethod
-    def get_attendance_by_employee_id_and_month_year(data):
+    def get_attendance_by_employee_id_and_month_year(id, year, month):
         try:
             # Lấy tất cả bản ghi Attendance cho employee_id, tháng và năm
             attendance_records = Attendance.query.filter(
                 and_(
-                    Attendance.employee_id == data.get('employee_id'),
-                    db.extract('month', Attendance.attendance_date) == data.get('month'),
-                    # db.extract('year', Attendance.attendance_date) == data.get('year')
+                    Attendance.employee_id == id,
+                    db.extract('month', Attendance.attendance_date) == month,
+                    db.extract('year', Attendance.attendance_date) == year
                 )
             ).all()
             
@@ -207,6 +224,7 @@ class AttendanceService:
         # Chuyển đổi các bản ghi thành danh sách dictionary
             result_data = []
             for record in attendance_records:
+                work_hours, total_overtime = calculate_work_hours_and_overtime(record.time_in, record.time_out)
                 record_dict = { 
                     "id": record.id,
                     "attendance_date": record.attendance_date.strftime('%Y-%m-%d'),
@@ -215,7 +233,8 @@ class AttendanceService:
                     "total_overtime": record.total_overtime,
                     "note": record.note,
                     "employee_id": record.employee_id,
-                    "attendance_status_id": record.attendance_status_id
+                    "attendance_status_id": record.attendance_status_id,
+                    "workHours" : work_hours
                 }
                 result_data.append(record_dict)
             return Success(

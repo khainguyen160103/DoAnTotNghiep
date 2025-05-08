@@ -1,13 +1,15 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship 
 from sqlalchemy import Integer, ForeignKey, VARCHAR, DateTime, DATE
 from datetime import datetime, date, timezone
-
+import pytz
 from app.extencions import db
 
+
+hanoi_timezone = pytz.timezone('Asia/Ho_Chi_Minh')
 class letterLeave(db.Model):
     __tablename__ = "letterLeave"
     id: Mapped[str] = mapped_column(VARCHAR, primary_key=True)
-    create_at: Mapped[datetime] = mapped_column(DateTime , default=datetime.now(timezone.utc))
+    create_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(hanoi_timezone))
     title: Mapped[str] = mapped_column(VARCHAR,nullable=False)
     request_date: Mapped[date] = mapped_column(DATE,nullable=False)
     start_at: Mapped[datetime] = mapped_column(DateTime,nullable=False)

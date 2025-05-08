@@ -70,6 +70,7 @@ class UserSerives:
             ).to_json(), 404
         print(user)
         data = { 
+            "id": id,
             "username": user.username,
             "password": user.password,
             "email": user.email,

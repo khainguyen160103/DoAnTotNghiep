@@ -62,11 +62,11 @@ const navItemsAdmin: NavItem[] = [
     icon: <ListIcon />,
     path: "/submissionForm",
   },
-    {
-    name: "Quản lý lương",
-    icon: <ListIcon />,
-    path: "/payroll"
-  },
+  //   {
+  //   name: "Quản lý lương",
+  //   icon: <ListIcon />,
+  //   path: "/payroll"
+  // },
   {
     name: "Báo cáo thống kê",
     icon: <PageIcon />,

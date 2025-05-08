@@ -20,7 +20,7 @@ def create_form_leave():
     data = request.get_json()
     id = str(uuid.uuid4())
     data['id'] = id
-    data['letter_status_id'] = 1
+    data['letter_status_id'] = 2
     response = FormSubmissionService.create_form_leave(data);
     return response
 
@@ -29,7 +29,7 @@ def create_form_over():
     data = request.get_json()
     id = str(uuid.uuid4())
     data['id'] = id
-    data['letter_status_id'] = 1
+    data['letter_status_id'] = 2
     response = FormSubmissionService.create_form_over(data);
     return response
 

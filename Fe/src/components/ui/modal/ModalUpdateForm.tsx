@@ -43,11 +43,6 @@ const ModalUpdateForm: React.FC<ModalFormEditProps> = ({
   setFormState((prev) => ({ ...prev, [name]: value }));
   };
   
-  const handleDateChange = (dates: Date[]) => {
-              if (dates && dates[0]) {
-                setFormState((prev) => ({ ...prev, start_at: dates[0].toISOString() }));
-              }
-            }
 
 
   console.log("formState", formState);
@@ -85,15 +80,16 @@ const ModalUpdateForm: React.FC<ModalFormEditProps> = ({
   return (
     <Modal className="max-w-[600px] p-5 lg:p-10" isOpen={isOpen} onClose={handleClose}>
       <div className="p-4">
-        <h2 className="text-lg font-semibold mb-4">Chỉnh sửa thông tin form</h2>
+        <h2 className="text-lg font-semibold mb-4">Chỉnh sửa thông tin đơn</h2>
         <div className="mb-4">
           <Label className="block text-sm font-medium text-gray-700">Mã Đơn</Label>
           <Input
+            readonly
             type="text"
             name="id"
             value={formState.id}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(e)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm"
           />
         </div>
         <div className="mb-4">
@@ -103,14 +99,15 @@ const ModalUpdateForm: React.FC<ModalFormEditProps> = ({
             name="title"
             value={formState.title}
             onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm"
           />
         </div>
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700">Trạng thái</label>
           <Select
+            placeholder={formState.letter_status_id === 1 ? "Từ Chối" : formState.letter_status_id === 2 ? "Chờ Duyệt" : "Đã Duyệt"}
             onChange={(value) => handleSelectChange("letter_status_id", value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm"
             options={[
               { value: "1", label: "Từ Chối" },
               { value: "2", label: "Chờ Duyệt" },
@@ -123,7 +120,7 @@ const ModalUpdateForm: React.FC<ModalFormEditProps> = ({
           <TextArea
             value={formState.note}
             onChange={(value :string) => handleAreaChange("note", value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm"
           />
         </div>
         <div className="mb-4">

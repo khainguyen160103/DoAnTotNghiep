@@ -170,10 +170,10 @@ class FormSubmissionService:
             ).to_json(), 200
         except Exception as e:
             return Error(
-                message="An error occurred while retrieving forms",
+                message=str(e),
                 status=500,
                 error=str(e)
-            ).to_json(), 500
+            ).to_json(), 400
 
     @staticmethod
     def get_all_by_id(id): 

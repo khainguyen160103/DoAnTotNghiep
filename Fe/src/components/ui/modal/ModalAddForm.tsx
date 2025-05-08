@@ -7,30 +7,33 @@ import Select from "@/components/form/Select";
 import Input from "@/components/form/input/InputField";
 import Button from "../button/Button";
 import TextArea from "@/components/form/input/TextArea";
-
+import axios from "axios";
+import { toast } from "react-toastify";
+import { useAuth } from "@/context/AuthContext";
 interface ModalAddFormProps {
   isOpen: boolean;
   onClose: () => void;
   mutate: () => Promise<any>;
 }
 
-const ModalAddForm: React.FC<ModalAddFormProps> = ({ isOpen, onClose }) => {
+const ModalAddForm: React.FC<ModalAddFormProps> = ({ isOpen, onClose , mutate}) => {
+  const { user } = useAuth();
   const [formType, setFormType] = useState<string>("overtime");
   const [formData, setFormData] = useState({
     title: "",
-    request_date: "",
+    request_date: new Date().toISOString().split("T")[0],
     start_at: "",
     end_at: "",
     note: "",
-    employee_id: "",
     type_date_ot_id: 1,
+    employee_id: ""
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
+  
   const handleSelectChange = (name: string, value: string) => {
     setFormType(value);
     if (value === "overtime") {
@@ -43,42 +46,45 @@ const ModalAddForm: React.FC<ModalAddFormProps> = ({ isOpen, onClose }) => {
       }));
     }
   };
-    const handleAreaChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    };
-
+  const handleAreaChange = (name: string, value: string) => {
+  setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+    
   const handleSubmit = async () => {
     let apiUrl = "";
     switch (formType) {
       case "overtime":
-        apiUrl = "/api/overtime";
+        apiUrl = "http://localhost:5000/api/form/create/overtime";
         break;
       case "leave":
-        apiUrl = "/api/leave";
+        apiUrl = "http://localhost:5000/api/form/create/leave";
         break;
       case "verification":
-        apiUrl = "/api/verification";
+        apiUrl = "http://localhost:5000/api/form/create/vertification";
         break;
       default:
         return;
     }
-
+    
+  
+    
     try {
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        alert("Form submitted successfully!");
+      console.log("formData", formData);
+      formData.employee_id = user?.id; // Set employee_id from user context
+      const response = await axios.post(apiUrl,formData, { 
+              withCredentials: true
+            });
+      console.log("response", response);
+      if (response.status === 200) {
+        await mutate();
+        toast.success("Tạo đơn thành công!");
         onClose();
       } else {
-        alert("Failed to submit form.");
+        toast.error("Tạo đơn thất bại!");
       }
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("An error occurred.");
+      toast.error("Đã xảy ra lỗi khi tạo đơn!");
     }
   };
 
@@ -90,7 +96,7 @@ const ModalAddForm: React.FC<ModalAddFormProps> = ({ isOpen, onClose }) => {
           <Label className="block mb-2">Chọn loại đơn</Label>
           <Select
             onChange={(value) => handleSelectChange("formType", value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm"
             options={[
               { value: "overtime", label: "Tăng Ca" },
               { value: "leave", label: "Xin Nghỉ" },
@@ -135,7 +141,7 @@ const ModalAddForm: React.FC<ModalAddFormProps> = ({ isOpen, onClose }) => {
             placeholder="Ghi chú"
             value={formData.note}
             onChange={(value :string) => handleAreaChange("note", value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm"
           />
         </div>
         {formType === "overtime" && (
@@ -149,7 +155,7 @@ const ModalAddForm: React.FC<ModalAddFormProps> = ({ isOpen, onClose }) => {
                   type_date_ot_id: parseInt(value, 10),
                 }))
               }
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"
               options={[
                 { value: "1", label: "Ngày thường" },
                 { value: "2", label: "Ngày lễ" },

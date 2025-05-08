@@ -1,167 +1,136 @@
-import React, { useEffect, useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "../ui/table";
-import Badge from "../ui/badge/Badge";
+import { useState } from "react"
+import { Table } from "../ui/table"
+import Badge from "../ui/badge/Badge"
+import { formatCurrency } from "@/utils/formatters"
 
-const PayrollReportTable: React.FC = () => {
-  const [data, setData] = useState<any[]>([]);
+interface PayrollReportTableProps {
+  data: any[]
+  onViewSlip: (payroll: any) => void
+  onUpdatePayroll: (payroll: any) => void
+}
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const response = await Promise.resolve([
-        {
-          base_salary: 10000000.0,
-          id: "d51d8c9c-9844-463e-a116-fbc9f997a217",
-          month: "2025-05-01",
-          salary_addOn: 200000.0,
-          salary_another: 100000.0,
-          salary_ot: 500000.0,
-          salary_total: 10800000.0,
-          total_attendance: 22.0,
-          year: 2025,
-        },
-        {
-          base_salary: 10000000.0,
-          id: "c3e5588a-6f15-44cf-80e4-a9f5c93c9e40",
-          month: "2025-05-01",
-          salary_addOn: 200000.0,
-          salary_another: 100000.0,
-          salary_ot: 500000.0,
-          salary_total: 10800000.0,
-          total_attendance: 22.0,
-          year: 2025,
-        },
-        {
-          base_salary: 10000000.0,
-          id: "63fe882a-f888-486b-8752-b34c2965d06d",
-          month: "2025-05-01",
-          salary_addOn: 200000.0,
-          salary_another: 100000.0,
-          salary_ot: 500000.0,
-          salary_total: 10800000.0,
-          total_attendance: 22.0,
-          year: 2026,
-        },
-      ]);
-      setData(response);
-    };
+const PayrollReportTable = ({
+  data = [],
+  onViewSlip,
+  onUpdatePayroll
+}: PayrollReportTableProps) => {
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
-    fetchData();
-  }, []);
+  // Format date from database (assumes format like "2023-05-01")
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A"
+    
+    const date = new Date(dateString)
+    return date.toLocaleDateString("vi-VN", {
+      year: "numeric",
+      month: "numeric",
+    })
+  }
+
+  // Get current items for pagination
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentItems = data.slice(indexOfFirstItem, indexOfLastItem)
+  const totalPages = Math.ceil(data.length / itemsPerPage)
+
+  const getStatusColor = (status: string) => {
+    switch(status?.toLowerCase()) {
+      case 'processed':
+        return 'success' as const
+      case 'pending':
+        return 'warning' as const
+      case 'draft':
+        return 'gray' as const // Changed to 'gray' to match valid BadgeColor type
+      default:
+        return 'info' as const
+    }
+  }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+    <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
       <div className="max-w-full overflow-x-auto">
-        <div className="min-w-[1102px]">
-          <Table>
-            {/* Table Header */}
-            <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
-              <TableRow>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
+        <Table
+          className="w-full"
+          // headings={[
+          //   "ID",
+          //   "Nhân viên",
+          //   "Kỳ lương",
+          //   "Lương cơ bản",
+          //   "Tổng thu nhập",
+          //   "Thực lãnh",
+          //   "Trạng thái",
+          //   "Thao tác"
+          // ]}
+          data={currentItems.map((payroll) => [
+            payroll.id,
+            payroll.employee_name || `Nhân viên ${payroll.employee_id}`,
+            formatDate(payroll.month),
+            formatCurrency(payroll.base_salary),
+            formatCurrency(payroll.gross_salary),
+            formatCurrency(payroll.net_salary),
+            <Badge 
+              key={`badge-${payroll.id}`}
+              color={getStatusColor(payroll.status)}
+              text={payroll.status || "N/A"}
+            />,
+            <div key={`actions-${payroll.id}`} className="flex items-center space-x-2">
+              <button
+                className="text-primary hover:text-blue-700"
+                onClick={() => onViewSlip(payroll)}
+              >
+                Xem phiếu
+              </button>
+              <button
+                className="text-warning hover:text-amber-700"
+                onClick={() => onUpdatePayroll(payroll)}
+              >
+                Cập nhật
+              </button>
+            </div>
+          ])}
+          containerClassName="min-w-full"
+        />
+        
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center mt-4 mb-6">
+            <div className="flex space-x-1">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded border border-gray-300 disabled:opacity-50"
+              >
+                Trước
+              </button>
+              
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-3 py-1 rounded border ${
+                    currentPage === page
+                      ? "bg-primary text-white border-primary"
+                      : "border-gray-300"
+                  }`}
                 >
-                  Mã ID
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
-                >
-                  Năm
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
-                >
-                  Tháng
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
-                >
-                  Lương Cơ Bản
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
-                >
-                  Phụ Cấp
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
-                >
-                  Khác
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
-                >
-                  OT
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
-                >
-                  Tổng Lương
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
-                >
-                  Số Ngày Công
-                </TableCell>
-              </TableRow>
-            </TableHeader>
-
-            {/* Table Body */}
-            <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              {data.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                    {item.id}
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                    {item.year}
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                    {item.month}
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                    {item.base_salary.toLocaleString()} VND
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                    <Badge color="primary" variant="light" size="md">
-                      {item.salary_addOn.toLocaleString()} VND
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                    {item.salary_another.toLocaleString()} VND
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                    {item.salary_ot.toLocaleString()} VND
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                    <Badge color="success" variant="solid" size="md">
-                      {item.salary_total.toLocaleString()} VND
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                    {item.total_attendance} ngày
-                  </TableCell>
-                </TableRow>
+                  {page}
+                </button>
               ))}
-            </TableBody>
-          </Table>
-        </div>
+              
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 rounded border border-gray-300 disabled:opacity-50"
+              >
+                Tiếp
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default PayrollReportTable;
+export default PayrollReportTable
