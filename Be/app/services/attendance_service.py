@@ -5,7 +5,7 @@ from datetime import datetime
 from openpyxl import load_workbook
 from app.utils import Error, Success
 import calendar
-from app.models import Attendance
+from app.models import Attendance , Deducation , PayrollDeducation , Payroll
 from app.extencions import db
 import uuid
 from sqlalchemy import and_, or_
@@ -136,8 +136,25 @@ class AttendanceService:
                         attendance_records.append(record)
             # Chuyển DataFrame thành danh sách các dictionary
             data = df.to_dict(orient='records')
-            
+            employee_ids = set(record["employee_id"] for record in attendance_records)
+
+            # Xóa toàn bộ attendance của nhân viên này trong tháng/năm đang upload
+            for emp_id in employee_ids:
+                db.session.query(Attendance).filter(
+                    Attendance.employee_id == emp_id,
+                    db.extract('month', Attendance.attendance_date) == month,
+                    db.extract('year', Attendance.attendance_date) == year
+                ).delete()
+            db.session.commit()
             # Lưu vào cơ sở dữ liệu
+            unique_keys = set()
+            filtered_records = []
+            for record in attendance_records:
+                key = (record["employee_id"], record["attendance_date"])
+                if key not in unique_keys:
+                    filtered_records.append(record)
+                    unique_keys.add(key)
+            attendance_records = filtered_records
             for record in attendance_records:
                 attendance = Attendance(
                     id=str(uuid.uuid4()), 
@@ -150,6 +167,44 @@ class AttendanceService:
                 )
                 db.session.add(attendance)
                 db.session.commit()
+                work_hours, _ = calculate_work_hours_and_overtime(attendance.time_in, attendance.time_out)
+                if work_hours is not None and work_hours < 1:
+                    # Tìm hoặc tạo loại khấu trừ
+                    deducation = Deducation.query.filter_by(type_deducation="Kỷ luật", name_deducation="Khấu trừ đi muộn").first()
+                    if not deducation:
+                        deducation = Deducation(
+                            id=str(uuid.uuid4()),
+                            type_deducation="Kỷ luật",
+                            name_deducation="Khấu trừ đi muộn",
+                            money=100000,  # Số tiền khấu trừ, điều chỉnh theo quy định
+                            date_deducation=datetime.now().date()
+                        )
+                        db.session.add(deducation)
+                        db.session.commit()
+                    # Tìm payroll của nhân viên trong tháng đó
+                    month = attendance.attendance_date.month  # Kết quả: 4 (kiểu int)
+                    year = attendance.attendance_date.year 
+                    payroll = Payroll.query.filter(
+                        Payroll.employee_id == attendance.employee_id,
+                        db.extract('month', Payroll.month) == month,
+                        Payroll.year == year
+                    ).first()
+                    if payroll:
+    # Kiểm tra đã có phiếu phạt cho ngày này chưa
+                        existing = PayrollDeducation.query.filter_by(
+                            payroll_id=payroll.id,
+                            deducation_id=deducation.id,
+                            attendance_date=attendance.attendance_date
+                        ).first()
+                        if not existing:
+                            payroll_deducation = PayrollDeducation(
+                                id=str(uuid.uuid4()),
+                                payroll_id=payroll.id,
+                                deducation_id=deducation.id,
+                                attendance_date=attendance.attendance_date
+                            )
+                            db.session.add(payroll_deducation)
+                            db.session.commit()
             return Success(
                 message="Upload file thành công",
                 status=200,

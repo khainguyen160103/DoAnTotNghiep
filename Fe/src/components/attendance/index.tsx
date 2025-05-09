@@ -22,6 +22,10 @@ export const Attendance = () => {
   const token = Cookies.get("access_token_cookie");
   const {data : users , error: userError, isLoading: userLoading} = useFetch("user/all" ,token);
   const {data : attendance, error : attendanceError, isLoading : attendanceLoading , mutate : attendanceMutate} = useFetch( selectedEmployee ? `attendance/allByMonth/${selectedEmployee}/${selectedYear}/${selectedMonth}` : "", token);
+  const { data: attendanceByEmployee, error: attendanceByEmployeeError, isLoading: attendanceByEmployeeLoading, mutate: attendanceByEmployeeMutate } = useFetch(
+    user && user?.role !== 1 ? `attendance/allByMonth/${user.id}/${selectedYear}/${selectedMonth}` : "",
+    token
+  );
   const fetchDayOff = async (employeeId: string) => {
   if (!employeeId) {
     console.log("Không có nhân viên nào được chọn!");
@@ -41,7 +45,6 @@ export const Attendance = () => {
       console.log("Dữ liệu ngày phép:", result);
       return result.payload; // Giả sử API trả về dữ liệu trong `payload`
     } else {
-      console.error("Không thể lấy dữ liệu ngày phép:", response.statusText);
       toast.error("Không thể lấy dữ liệu ngày phép!");
       return null;
     }
@@ -52,19 +55,32 @@ export const Attendance = () => {
   }
    
   };
+
+
   const handleSelectChange = async (value: string) => {
     setSelectedEmployee(value);
+    console.log(dayOff);
+    
     console.log("Selected employee:", value);
      // Cập nhật nhân viên được chọn
     const dayOffData = await fetchDayOff(selectedEmployee);
-    if (dayOffData) {
-      setDayOff(dayOffData.dayOff || 0); // Giả sử `dayOff` là key chứa số ngày phép
-    }
+    if (dayOffData && Array.isArray(dayOffData)) {
+      // Lọc đúng tháng/năm đang chọn
+      const matched = dayOffData.find(
+        (item) =>
+          item.DayOff_month === selectedMonth && item.DayOff_year === selectedYear
+      );
+      setDayOff(matched ? matched.DayOff_number : 0);
+    } else {
+      setDayOff(0);
   };
+}
   
   const handleFileChange =  async (file: File | null) => {
+   console.log(file);
+   
    if (!file) {
-    console.error("Không có file nào được chọn!");
+    console.log("Không có file nào được chọn!");
     return;
   }
 
@@ -108,30 +124,31 @@ export const Attendance = () => {
   //   timeOut: item.time_out,
   //   overtime: item.total_overtime,
   // }));
-  if(isAdmin()) { 
+  // if(isAdmin()) { 
     
-  }
+  // }
 
    const handleMonthYearChange = (month: number, year: number) => {
-    console.log("Tháng và năm từ Calendar:", month, year);
-    setSelectedMonth(month);
-    setSelectedYear(year);
+    if (month !== selectedMonth || year !== selectedYear) {
+      setSelectedMonth(month);
+      setSelectedYear(year);
+    }
   };
   return (
     <>
-      <div className="flex justify-between mb-2.5 items-center">
-        <FileInput onChange={(file) => handleFileChange(file)} />
-        <div className="h-full flex justify-center items-center">
-        <Label className="mr-2">Phép:</Label>
-        <Input
-          className="text-lg font-semibold"
-          value={dayOff || 0} // Hiển thị số ngày phép hoặc trạng thái đang tải
-          readonly
-        />
-        </div>
-        {isAdmin() && (
+      
+        {isAdmin() && ( <> 
+          <div className="flex justify-between mb-2.5 items-center">
+          <FileInput onChange={(file) => handleFileChange(file)} />
+          <div className="h-full flex justify-center items-center">
+          <Label className="mr-2">Phép:</Label>
+          <Input
+            className="text-lg font-semibold"
+            value={dayOff || 0} // Hiển thị số ngày phép hoặc trạng thái đang tải
+          />
+          </div>
           <Select
-            className="w-s m"
+            className="w-s m "
             // options={[
             //   { value: users?.id, label: users?.fullname },
             //   { value: "IT7", label: "Nhân viên IT7" },
@@ -145,23 +162,21 @@ export const Attendance = () => {
             placeholder="Chọn nhân viên"
             onChange={(e) => handleSelectChange(e)}
           />
-        )}
-      </div>
+        </div>
+        </>)}
       
       <Calendar
         onMonthYearChange={handleMonthYearChange} // Truyền hàm xử lý sự kiện tháng và năm
         // events={events} // Truyền dữ liệu sự kiện vào Calendar
         // onDateClick={(date) => console.log("Ngày được chọn:", date)}
-        data={ selectedEmployee ? attendance?.payload : []}
+        data={ selectedEmployee ? attendance?.payload : attendanceByEmployee?.payload}
         isLoading={ selectedEmployee ?  attendanceLoading : false}
         error={selectedEmployee ? attendanceError  : false}
-        employeeId={selectedEmployee}
-        mutate={attendanceMutate}
+        employeeId={user?.role === 1 ? selectedEmployee : user?.id}
+        mutate={user?.role === 1 ? attendanceMutate : attendanceByEmployeeMutate}
       />
     </>
   );
 };
 
-function setSelectedEmployee(value: string) {
-  throw new Error("Function not implemented.");
-}
+

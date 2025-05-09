@@ -23,6 +23,7 @@ import { startOfMonth, endOfMonth, format } from "date-fns";
 import Label from "../form/Label";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useAuth } from "@/context/AuthContext";
 interface CalendarEvent extends EventInput {
   extendedProps: {
     calendar: string;
@@ -42,6 +43,8 @@ const Calendar: React.FC<CalendarProps> = ({ onMonthYearChange , data , isLoadin
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
     null
   );
+  console.log(data);
+  const { user } = useAuth();
   const [eventTitle, setEventTitle] = useState("");
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [eventStartDate, setEventStartDate] = useState("");
@@ -76,59 +79,13 @@ const Calendar: React.FC<CalendarProps> = ({ onMonthYearChange , data , isLoadin
 
   return allDays;
 };
-  useEffect(() => {
-    if (calendarRef.current) {
-      const calendarApi = calendarRef.current.getApi();
-      const currentDate = calendarApi.getDate();
-      const currentMonth = currentDate.getMonth() + 1; // Tháng (0-based, nên cần +1)
-      const currentYear = currentDate.getFullYear();
-
-      // Gọi hàm callback để truyền tháng và năm lên cha
-      onMonthYearChange(currentMonth, currentYear);
-    }
-  }, [calendarRef, onMonthYearChange]);
-
-//   useEffect(() => {
-//   setEvents([
-//     {
-//       id: "1",
-//       time: "08:23 - 17:45",
-//       start: new Date().toISOString().split("T")[0],
-//       extendedProps: {
-//         calendar: "Danger",
-//         workHours: "1",
-//         status: "Đi muộn - Về sớm",
-//       },
-//     },
-//     {
-//       id: "2",
-//       time: "08:45 - 17:15",
-//       start: new Date(Date.now() + 86400000).toISOString().split("T")[0],
-//       extendedProps: {
-//         calendar: "Warning",
-//         workHours: "0.84",
-//         status: "Nghỉ",
-//       },
-//     },
-//     {
-//       id: "3",
-//       time: "08:23 - 20:15",
-//       start: new Date(Date.now() + 172800000).toISOString().split("T")[0],
-//       extendedProps: {
-//         calendar: "Success",
-//         workHours: "1.35",
-//         status: "Tăng ca - Làm thêm",
-//       },
-//     },
-//   ]);
-// }, []);
+  
   const convertDateToYYYYMMDD = (date: Date): string => {
     console.log(date);
     
     return date.toISOString().split("T")[0];
   };  
   const handleDateSelect = (selectInfo: DateSelectArg) => {
-    console.log();
       
     resetModalFields();
     setEventStartDate(selectInfo.startStr);
@@ -304,20 +261,19 @@ const Calendar: React.FC<CalendarProps> = ({ onMonthYearChange , data , isLoadin
             right: "dayGridMonth,timeGridWeek,timeGridDay",
           }}
           events={events}
-          selectable={true}
-          select={handleDateSelect}
-          eventClick={handleEventClick}
+          selectable={user?.role === 1 ? true : false}
+          select={user?.role === 1 ? handleDateSelect : undefined}
+          eventClick={user?.role === 1 ? handleEventClick : undefined}
           eventContent={renderEventContent}
           datesSet={() => {
-                if (calendarRef.current) {
+            if (calendarRef.current) {
               const calendarApi = calendarRef.current.getApi();
               const currentDate = calendarApi.getDate();
               const currentMonth = currentDate.getMonth() + 1;
               const currentYear = currentDate.getFullYear();
-
-              // Gọi hàm callback khi lịch thay đổi
               onMonthYearChange(currentMonth, currentYear);
-          }}}
+            }
+          }}
         />
       </div>
      
@@ -406,7 +362,7 @@ const renderEventContent = (eventInfo: EventContentArg) => {
             <span className="black"><TimeIcon  /></span>
           
       </div>
-      <div className="text-lg font-bold text-gray-900 font-bold text-center">{eventInfo.event.extendedProps.workHours}</div>
+      <div className="text-lg  text-gray-900 font-bold text-center">{eventInfo.event.extendedProps.workHours}</div>
       <div className={`text-sm font-medium text-center ${statusColorClass}`}>{eventInfo.event.extendedProps.workHours < 1 ? "Đi muộn - Về sớm" : ""}</div>
 
     </div>

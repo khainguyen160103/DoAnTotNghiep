@@ -9,7 +9,8 @@ const fetcher = (url: string , token? :string) => fetch(url, {
   }).then((res) => res.json());
 
 export const useFetch = (url: string , token? :string) => {
-    const { data, error, isLoading, mutate } = useSWR(`http://localhost:5000/api/${url}`, (url) => fetcher(url,token));
+    const shouldFetch = url;
+    const { data, error, isLoading, mutate } = useSWR(shouldFetch ?`http://localhost:5000/api/${url}` : null, (url) => fetcher(url,token));
     return {
         data,
         error,

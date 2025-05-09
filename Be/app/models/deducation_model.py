@@ -6,7 +6,7 @@ from app.extencions import db
 
 class Deducation(db.Model): 
     __tablename__ = 'deducation'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[str] = mapped_column(VARCHAR, primary_key=True)
     type_deducation: Mapped[str] = mapped_column(VARCHAR, nullable=False , unique=True)
     name_deducation: Mapped[str] = mapped_column(VARCHAR, nullable=False)
     money:Mapped[float] = mapped_column(DECIMAL,nullable=False)

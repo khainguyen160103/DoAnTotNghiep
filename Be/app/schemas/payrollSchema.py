@@ -17,4 +17,5 @@ class PayrollSchema(BaseSchema):
     salary_addOn = fields.Float()
     salary_another = fields.Float()
     salary_total = fields.Float()
+    employee_id = fields.String()
 

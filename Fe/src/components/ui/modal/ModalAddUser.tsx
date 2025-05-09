@@ -31,8 +31,8 @@ const employeeTypeOptions = [
     { value: "Freelancer", label: "Freelancer" },
 ]
 const roleOptions = [
-    { value: "hr", label: "HR" },
-    { value: "user", label: "User" },
+    { value: "1", label: "HR" },
+    { value: "3", label: "User" },
     
 
   ];

@@ -79,7 +79,11 @@ const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
   const { isLoading, user } = useAuth();
-  
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  useEffect(() => {
+    setHasHydrated(true);
+  }, []);
 
   // Sử dụng useMemo với giá trị mặc định
   const { menuItems, isMenuReady } = useMemo(() => {
@@ -96,8 +100,8 @@ const AppSidebar: React.FC = () => {
   }, [isLoading, user]); // Chỉ phụ thuộc vào isLoading và isAdmin
 
   const renderContent = () => {
-    // Nếu đang loading hoặc chưa sẵn sàng, hiển thị skeleton
-    if (isLoading || !isMenuReady) {
+    // Chỉ render skeleton khi chưa hydrate hoặc đang loading
+    if (!hasHydrated || isLoading || !isMenuReady) {
       return (
         <ul className="flex flex-col gap-4">
           {Array(5).fill(0).map((_, index) => (
