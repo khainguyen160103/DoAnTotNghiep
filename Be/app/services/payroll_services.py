@@ -1,6 +1,7 @@
 import uuid
+from sqlalchemy import extract
 from datetime import date
-from app.models import Payroll, Employee, Attendance, Deducation , Allowance
+from app.models import Payroll, Employee, Attendance, Deducation , Allowance, PayrollDeducation , PayrollAllowance
 from app.schemas import PayrollSchema
 from app.extencions import db
 from app.utils import Error, Success
@@ -512,3 +513,78 @@ class PayrollService:
             "allowances": float(total_allowances),
             "deductions": float(total_deductions)
         }
+    
+    @staticmethod
+    def get_allowances_by_employee_month(employee_id, month, year): 
+        try:
+        # Tìm payroll của nhân viên trong tháng/năm
+            payroll = Payroll.query.filter(
+                Payroll.employee_id == employee_id,
+                extract('month', Payroll.month) == int(month),
+                Payroll.year == int(year)
+            ).first()
+            if not payroll:
+                return {
+                    "status": 404,
+                    "message": "No payroll found for this employee in the given month/year",
+                    "payload": []
+                }
+            # Lấy tất cả các bản ghi payrollAllowance theo payroll_id
+            payroll_allowances = PayrollAllowance.query.filter_by(payroll_id=payroll.id).all()
+            result = []
+            for pa in payroll_allowances:
+                allowance = Allowance.query.get(pa.allowance_id)
+                result.append({
+                    "id": allowance.id if allowance else None,
+                    "name": allowance.name if allowance else "",
+                    "money": float(allowance.money) if allowance else 0,
+                    "attendance_date": pa.attendance_date.isoformat() if hasattr(pa, "attendance_date") and pa.attendance_date else ""
+                })
+            return {
+                "status": 200,
+                "payload": result
+            }
+        except Exception as e:
+            return {
+                "status": 500,
+                "message": str(e),
+                "payload": []
+            }
+    
+    @staticmethod
+    def get_deductions_by_employee_month(employee_id, month, year):
+            try:
+                # Tìm payroll của nhân viên trong tháng/năm
+                payroll = Payroll.query.filter(
+                    Payroll.employee_id == employee_id,
+                    extract('month', Payroll.month) == int(month),
+                    Payroll.year == int(year)
+                ).first()
+                if not payroll:
+                    return {
+                        "status": 404,
+                        "message": "No payroll found for this employee in the given month/year",
+                        "payload": []
+                    }
+                # Lấy tất cả các bản ghi payrollDeducation theo payroll_id
+                payroll_deductions = PayrollDeducation.query.filter_by(payroll_id=payroll.id).all()
+                result = []
+                for pd in payroll_deductions:
+                    deduction = Deducation.query.get(pd.deducation_id)
+                    result.append({
+                        "id": deduction.id if deduction else None,
+                        "type_deducation": deduction.type_deducation if deduction else "",
+                        "name_deducation": deduction.name_deducation if deduction else "",
+                        "money": float(deduction.money) if deduction else 0,
+                        "attendance_date": pd.attendance_date.isoformat() if pd.attendance_date else ""
+                    })
+                return {
+                    "status": 200,
+                    "payload": result
+                }
+            except Exception as e:
+                return {
+                    "status": 500,
+                    "message": str(e),
+                    "payload": []
+                }

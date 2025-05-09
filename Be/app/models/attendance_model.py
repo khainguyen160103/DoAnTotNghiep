@@ -8,8 +8,8 @@ class Attendance(db.Model):
     __tablename__ = "attendance"
     id: Mapped[str] = mapped_column(VARCHAR, primary_key=True)
     attendance_date: Mapped[date] = mapped_column(DATE,nullable=False)
-    time_in: Mapped[time] = mapped_column(Time,nullable=False)
-    time_out: Mapped[time] = mapped_column(Time,nullable=False)
+    time_in: Mapped[time] = mapped_column(Time)
+    time_out: Mapped[time] = mapped_column(Time)
     total_overtime: Mapped[int] = mapped_column(Integer,nullable=True)
     note: Mapped[str] = mapped_column(VARCHAR(200),)
 

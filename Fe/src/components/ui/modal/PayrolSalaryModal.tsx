@@ -37,6 +37,7 @@ export const PayrollSalaryModal: React.FC<PayrollSalaryModalProps> = ({
         </div>
         <div className="p-4">
           <ModalCreatePayroll
+            employee={employee}
             salary={salary}
             selectedMonth={selectedMonth}
             selectedYear={selectedYear}

@@ -4,38 +4,57 @@ import { SalaryData } from "@/types/common";
 import Label from "@/components/form/Label";
 import Input from "@/components/form/input/InputField";
 import Select from "@/components/form/Select";
-export const ModalCreatePayroll = ({ salary,  onSubmit, onCancel ,selectedMonth , selectedYear }: { selectedMonth: number ,selectedYear: number,salary : SalaryData, onSubmit: (data: any) => void; onCancel: () => void }) => {
-    
-  
-  useEffect(() => {
-    const salaryObj = Array.isArray(salary) ? salary[0] : salary;
-    const isMatch =
-        salaryObj &&
-        Number(new Date(salaryObj.month).getMonth() + 1) === Number(selectedMonth) &&
-        Number(salaryObj.year) === Number(selectedYear);
-
-    setFormData(prev => ({
-        // Giữ nguyên base_salary nếu đã nhập, nếu chưa thì lấy từ salaryObj
-        base_salary: prev.base_salary || (isMatch ? salaryObj.base_salary || "" : salaryObj?.base_salary || ""),
-        total_attendance: isMatch ? salaryObj.total_attendance || "" : "",
-        month: selectedMonth || "",
-        year: selectedYear || "",
-        salary_ot: isMatch ? salaryObj.salary_ot || "" : "",
-        salary_addOn: isMatch ? salaryObj.salary_addOn || "" : "",
-        salary_another: isMatch ? salaryObj.salary_another || "" : "",
-    }));
-}, [salary, selectedMonth, selectedYear]);
+import { User } from "@/types/common";
+import Cookies from "js-cookie";
+import axios from "axios";
+export const ModalCreatePayroll = ({ employee , salary,  onSubmit, onCancel ,selectedMonth , selectedYear }: { employee : User , selectedMonth: number ,selectedYear: number,salary : SalaryData, onSubmit: (data: any) => void; onCancel: () => void }) => {
+      const [totalOvertime, setTotalOvertime] = useState<number>(0);
+      const [totalAttendance, setTotalAttendance] = useState<number>(0);
+      const salaryObj = Array.isArray(salary) ? salary[0] : salary;
+      const [formData, setFormData] = useState({
+          base_salary: salaryObj?.base_salary ,
+          total_attendance: salaryObj?.total_attendance ,
+          month: salaryObj?.month ? new Date(salaryObj.month).getMonth() + 1 : "",
+          year: salaryObj?.year ,
+          salary_ot: salaryObj?.salary_ot ,
+          salary_addOn: salaryObj?.salary_addOn ,
+          salary_another: salaryObj?.salary_another ,
+      });
+      useEffect(() => {
+        const fetchAttendance = async () => {
+          if (!employee) return;
+          const token = Cookies.get('access_token_cookie');
+          try {
+            const res = await axios.get(
+              `http://127.0.0.1:5000/api/attendance/allByMonth/${employee.id}/${selectedYear}/${selectedMonth}`,
+              { headers: { 'Authorization': `Bearer ${token}` }, withCredentials: true }
+            );
+            const totalOt: number = Array.isArray(res.data.payload)
+            ? res.data.payload.reduce((sum: number, att: { total_overtime?: number }) => sum + (att.total_overtime ? Number(att.total_overtime) : 0), 0)
+            : 0;
+          setTotalOvertime(totalOt);
+            setTotalAttendance(Array.isArray(res.data.payload) ? res.data.payload.length : 0);
+          } catch {
+            setTotalAttendance(0);
+          }
+        };
+        fetchAttendance();
+      }, [employee, selectedMonth, selectedYear]);
+      useEffect(() => {
+        // Tự động tính lương tăng ca khi có base_salary hoặc totalOvertime thay đổi
+        const baseSalary = Number(formData.base_salary) || 0;
+        const overtimeRate = 1.5; // hệ số tăng ca
+        // 208 là số giờ công chuẩn/tháng (bạn có thể thay đổi nếu khác)
+        const overtimeSalary = baseSalary && totalOvertime
+          ? Math.round((baseSalary / 192) * overtimeRate * totalOvertime)
+          : 0;
+        setFormData(prev => ({
+          ...prev,
+          salary_ot: overtimeSalary
+        }));
+      }, [formData.base_salary, totalOvertime]);
     console.log(salary);
-    const salaryObj = Array.isArray(salary) ? salary[0] : salary;
-    const [formData, setFormData] = useState({
-        base_salary: salaryObj?.base_salary ,
-        total_attendance: salaryObj?.total_attendance ,
-        month: salaryObj?.month ? new Date(salaryObj.month).getMonth() + 1 : "",
-        year: salaryObj?.year ,
-        salary_ot: salaryObj?.salary_ot ,
-        salary_addOn: salaryObj?.salary_addOn ,
-        salary_another: salaryObj?.salary_another ,
-    });
+   
   //  console.log(formData.salary_addon)
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         
@@ -50,7 +69,23 @@ export const ModalCreatePayroll = ({ salary,  onSubmit, onCancel ,selectedMonth 
       e.preventDefault();
       onSubmit(formData);
     };
-  
+    useEffect(() => {
+      const salaryObj = Array.isArray(salary) ? salary[0] : salary;
+      const isMatch =
+        salaryObj &&
+        Number(new Date(salaryObj.month).getMonth() + 1) === Number(selectedMonth) &&
+        Number(salaryObj.year) === Number(selectedYear);
+    
+      setFormData({
+        base_salary: salaryObj?.base_salary ?? "",
+        total_attendance: salaryObj?.total_attendance ?? "",
+        month: selectedMonth,
+        year: selectedYear,
+        salary_ot: isMatch ? salaryObj.salary_ot ?? "" : "",
+        salary_addOn: isMatch ? salaryObj.salary_addOn ?? "" : "",
+        salary_another: isMatch ? salaryObj.salary_another ?? "" : "",
+      });
+    }, [salary, selectedMonth, selectedYear]);
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
@@ -62,7 +97,7 @@ export const ModalCreatePayroll = ({ salary,  onSubmit, onCancel ,selectedMonth 
               type="number"
               id="base_salary"
               name="base_salary"
-              value={formData.base_salary}
+              value={formData.base_salary ?? ""}
               onChange={handleChange}
               className="w-full p-2 border border-gray-300 rounded-md"
               required
@@ -76,7 +111,7 @@ export const ModalCreatePayroll = ({ salary,  onSubmit, onCancel ,selectedMonth 
               type="number"
               id="total_attendance"
               name="total_attendance"
-              value={formData.total_attendance}
+              value={totalAttendance}
               onChange={handleChange}
               className="w-full p-2 border border-gray-300 rounded-md"
               required
@@ -125,7 +160,10 @@ export const ModalCreatePayroll = ({ salary,  onSubmit, onCancel ,selectedMonth 
               id="salary_ot"
               name="salary_ot"
               value={formData.salary_ot}
-              onChange={handleChange}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFormData((prev) => ({ ...prev, salary_ot: value }));
+              }}
               className="w-full p-2 border border-gray-300 rounded-md"
             />
           </div>

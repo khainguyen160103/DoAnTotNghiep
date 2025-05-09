@@ -106,7 +106,9 @@ export const ModalAddUser : React.FC<ModalAddUserProps> = ({
                             <Select
                                 options={positionOptions}
                                 placeholder="Vị Trí"
-                                onChange={handleSelectChange}
+                                onChange={(value) =>
+                                    setUserData((prevData) => ({ ...prevData, position_id: value }))
+                                  }
                                 className="dark:bg-dark-900 w-full"
                             />
                             </div>
@@ -116,7 +118,9 @@ export const ModalAddUser : React.FC<ModalAddUserProps> = ({
                             <Select
                                 options={employeeTypeOptions}
                                 placeholder="Loại nhân viên"
-                                onChange={handleSelectChange}
+                                onChange={(value) =>
+                                    setUserData((prevData) => ({ ...prevData, employee_type: value }))
+                                  }
                                 className="dark:bg-dark-900 w-full"
                             />
                             </div>
@@ -128,7 +132,9 @@ export const ModalAddUser : React.FC<ModalAddUserProps> = ({
                             <Select
                                 options={roleOptions}
                                 placeholder="Quyền"
-                                onChange={handleSelectChange}
+                                onChange={(value) =>
+                                    setUserData((prevData) => ({ ...prevData, role_id: Number(value) }))
+                                  }
                                 className="dark:bg-dark-900 w-full"
                             />
                             

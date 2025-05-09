@@ -144,7 +144,9 @@ export const Attendance = () => {
           <Label className="mr-2">Phép:</Label>
           <Input
             className="text-lg font-semibold"
-            value={dayOff || 0} // Hiển thị số ngày phép hoặc trạng thái đang tải
+            value={dayOff || 0} 
+            onChange={(e) => setDayOff(Number(e.target.value))} // Cập nhật số ngày phép
+            // Hiển thị số ngày phép hoặc trạng thái đang tải
           />
           </div>
           <Select

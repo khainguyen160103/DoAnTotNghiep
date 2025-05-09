@@ -97,3 +97,14 @@ def process_payroll():
     
     response = PayrollService.process_payroll(data)
     return response
+
+
+@bpPayroll.route('/allowance/<employee_id>/<month>/<year>', methods=['GET'])
+def get_allowances(employee_id, month, year):
+    response = PayrollService.get_allowances_by_employee_month(employee_id, month, year)
+    return response
+
+@bpPayroll.route('/deduction/<employee_id>/<month>/<year>', methods=['GET'])
+def get_deductions(employee_id, month, year):
+    response = PayrollService.get_deductions_by_employee_month(employee_id, month, year)
+    return response

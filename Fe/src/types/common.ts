@@ -66,6 +66,7 @@ export interface SalaryData {
   total_attendance: number;
   year: string;
   employee_id: string;
+  total_overtime: number;
 }
 
 export interface  FormData {

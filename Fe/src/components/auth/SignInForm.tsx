@@ -15,7 +15,7 @@ import { useEffect } from "react";
 import Spinner from "@/components/ui/spinner/spinner";
 export default function SignInForm() {
   const router = useRouter()
-  const { isLoading : userLoading , fetchUserData } = useAuth()
+  const { isLoading : userLoading ,user ,  fetchUserData } = useAuth()
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [password, setPassword] = useState('')
@@ -54,7 +54,11 @@ export default function SignInForm() {
             
             // Sử dụng setTimeout để đảm bảo dữ liệu đã được cập nhật
             setTimeout(() => {
+              if (user?.role === 1) {
                 router.push('/');
+              } else {
+                router.push('/attendance');
+              }
             }, 500);
       } catch (error) {
         console.log(error);

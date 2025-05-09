@@ -42,7 +42,29 @@ export default function PayrollTable(props: { selectMonth : number , selectYear:
   const { user } = useAuth();
   const token = Cookies.get('access_token_cookie');
   const [employeesWithSalary, setEmployeesWithSalary] = useState<EmployeeWithSalary[]>([]);
+  const [baseSalaryMap, setBaseSalaryMap] = useState<Record<string, number>>({});
+  const [deductionMap, setDeductionMap] = useState<Record<string, number>>({});
 
+  useEffect(() => {
+    const fetchDeductions = async () => {
+      const map: Record<string, number> = {};
+      await Promise.all(employees.map(async (emp) => {
+        try {
+          const res = await axios.get(
+            `http://127.0.0.1:5000//api/payroll/deduction/${emp.id}/${selectMonth}/${selectYear}`
+          );
+            const totalDeduction: number = Array.isArray(res.data.payload)
+            ? res.data.payload.reduce((sum: number, d: { money?: string }) => sum + (d.money ? Number(d.money) : 0), 0)
+            : 0;
+          map[emp.id] = totalDeduction;
+        } catch {
+          map[emp.id] = 0;
+        }
+      }));
+      setDeductionMap(map);
+    };
+    fetchDeductions();
+  }, [employees, selectMonth, selectYear]);
   const filteredEmployeesWithSalary = employeesWithSalary.map(({ employee, salary }) => ({
     employee,
     salary: salary && salary.month && salary.year
@@ -110,52 +132,6 @@ export default function PayrollTable(props: { selectMonth : number , selectYear:
     closeModalEdit();
   };
 
-  const handleSave = () => {
-    handleCloseModalEdit();
-    mutate();
-    mutateSalary();
-  };
-  
-  const handleOpenModalDelete = async (id: string) => {
-    try {
-      const res = await axios.get(`http://127.0.0.1:5000/api/form/all/${id}`, {
-        withCredentials: true,
-      });
-      if (res.status === 200) {
-        setItemSelect(res.data.payload);
-        openModalDelete();
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  };
-  
-  const handleCloseModalDelete = () => {
-    setItemSelect(null);
-    closeModalDelete();
-  };
-  
-  const handleConfirmDelete = async (confirm: boolean) => {
-    const id = itemSelect?.id;
-    if (confirm) {
-      try {
-        const token = Cookies.get('access_token_cookie');
-        const res = await axios.delete(`http://127.0.0.1:5000/api/form/delete/${id}`, {
-          withCredentials: true,
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        toast.success("Xóa đơn thành công");
-        await mutate();
-        await mutateSalary();
-      } catch (error) {
-        toast.error("Có lỗi xảy ra khi xóa đơn");
-      }
-    }
-    handleCloseModalDelete();
-  };
-
   // Xử lý tạo mới dữ liệu lương cho nhân viên
   const handleOpenCreateSalary = (employee: User) => {
     console.log(employee);
@@ -168,43 +144,101 @@ export default function PayrollTable(props: { selectMonth : number , selectYear:
     setSelectedEmployee(null);
     closeModalCreate();
   };
-
+  const getTotalAttendance = async (employeeId: string, year: number, month: number) => {
+    try {
+      const response = await axios.get(
+        `http://127.0.0.1:5000/api/attendance/allByMonth/${employeeId}/${year}/${month}`,
+        { headers: { 'Authorization': `Bearer ${token}` }, withCredentials: true }
+      );
+      // Nếu API trả về mảng, tổng công là độ dài mảng
+      return Array.isArray(response.data.payload) ? response.data.payload.length : 0;
+      // Nếu trả về tổng công cụ thể, return response.data.payload.total_attendance;
+    } catch (error) {
+      console.error("Error fetching attendance:", error);
+      return 0;
+    }
+  };
   const handleCreateSalary = async (formData: any) => {
     if (!selectedEmployee) return;
-    console.log(formData);
+    const total_attendance = await getTotalAttendance(selectedEmployee.id, Number(formData.year), Number(formData.month));
     const monthString = `${formData.year}-${formData.month.toString().padStart(2, "0")}-01`;
     const salary_total =
-        Number(formData.base_salary) +
-        Number(formData.salary_ot) +
-        Number(formData.salary_addOn) +
-        Number(formData.salary_another);
+      Number(formData.base_salary) +
+      Number(formData.salary_ot) +
+      Number(formData.salary_addOn) +
+      Number(formData.salary_another) - 
+      (deductionMap[selectedEmployee.id] || 0);
+  
+    // Tìm dữ liệu lương tháng/năm đó
+    const currentSalary = salaryData?.find(
+      (s: SalaryData) =>
+        s.employee_id === selectedEmployee.id &&
+        Number(s.month.split("-")[1]) === Number(formData.month) &&
+        Number(s.year) === Number(formData.year)
+    );
+  
     try {
-      const response = await axios.post('http://127.0.0.1:5000/api/payroll/create', {
-        employee_id: selectedEmployee.id,
-        base_salary: Number(formData.base_salary),
-        month: monthString,
-        year: Number(formData.year),
-        total_attendance: Number(formData.total_attendance),
-        salary_ot: Number(formData.salary_ot) || 0,
-        salary_addOn: Number(formData.salary_addOn) || 0,
-        salary_another: Number(formData.salary_another) || 0,
-        salary_total: salary_total
-      }, {
-        headers: { 'Authorization': `Bearer ${token}` },
-        withCredentials: true
-      });
-
+      let response;
+      if (currentSalary) {
+        // Đã có lương => gọi API update
+        response = await axios.patch('http://127.0.0.1:5000/api/payroll/update', {
+          id: currentSalary.id,
+          base_salary: Number(formData.base_salary),
+          month: monthString,
+          year: Number(formData.year),
+          total_attendance: total_attendance,
+          salary_ot: Number(formData.salary_ot) || 0,
+          salary_addOn: Number(formData.salary_addOn) || 0,
+          salary_another: Number(formData.salary_another) || 0,
+          salary_total: salary_total
+        }, {
+          headers: { 'Authorization': `Bearer ${token}` },
+          withCredentials: true
+        });
+      } else {
+        // Chưa có lương => gọi API tạo mới
+        response = await axios.post('http://127.0.0.1:5000/api/payroll/create', {
+          employee_id: selectedEmployee.id,
+          base_salary: Number(formData.base_salary),
+          month: monthString,
+          year: Number(formData.year),
+          total_attendance: total_attendance,
+          salary_ot: Number(formData.salary_ot) || 0,
+          salary_addOn: Number(formData.salary_addOn) || 0,
+          salary_another: Number(formData.salary_another) || 0,
+          salary_total: salary_total
+        }, {
+          headers: { 'Authorization': `Bearer ${token}` },
+          withCredentials: true
+        });
+      }
+  
       if (response.status === 200) {
-        toast.success("Tạo dữ liệu lương thành công!");
+        toast.success(currentSalary ? "Cập nhật lương thành công!" : "Tạo dữ liệu lương thành công!");
+        setBaseSalaryMap(prev => ({
+          ...prev,
+          [selectedEmployee.id]: Number(formData.base_salary)
+        }));
         handleCloseCreateSalary();
         mutateSalary();
       }
     } catch (error) {
-      console.error("Error creating salary data:", error);
-      toast.error("Có lỗi xảy ra khi tạo dữ liệu lương");
+      console.error("Error saving salary data:", error);
+      toast.error("Có lỗi xảy ra khi lưu dữ liệu lương");
     }
   };
-
+  
+  useEffect(() => {
+    if (salaryData && Array.isArray(salaryData)) {
+      const map: Record<string, number> = {};
+      salaryData.forEach((s: SalaryData) => {
+        if (s.base_salary && !map[s.employee_id]) {
+          map[s.employee_id] = s.base_salary;
+        }
+      });
+      setBaseSalaryMap(map);
+    }
+  }, [salaryData]);
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
       <div className="max-w-full overflow-x-auto">
@@ -259,6 +293,12 @@ export default function PayrollTable(props: { selectMonth : number , selectYear:
                   isHeader
                   className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
                 >
+                  Khấu trừ
+                </TableCell>
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
+                >
                   Tổng lương
                 </TableCell>
                 <TableCell
@@ -294,7 +334,12 @@ export default function PayrollTable(props: { selectMonth : number , selectYear:
                         {employee.position || "—"}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                        {salary ? formatCurrency(salary.base_salary) : "—"}
+                        {salary && salary.base_salary !== undefined && salary.base_salary !== null
+                          ? formatCurrency(salary.base_salary)
+                          : baseSalaryMap[employee.id]
+                            ? formatCurrency(baseSalaryMap[employee.id])
+                            : "—"
+                        }   
                       </TableCell>
                       <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                         {salary ? formatCurrency(salary.salary_ot) : "—"}
@@ -304,6 +349,11 @@ export default function PayrollTable(props: { selectMonth : number , selectYear:
                       </TableCell>
                       <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                         {salary ? formatCurrency(salary.salary_another) : "—"}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
+                      {deductionMap.hasOwnProperty(employee.id)
+                        ? deductionMap[employee.id]
+                        : "—"}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                         {salary ? (

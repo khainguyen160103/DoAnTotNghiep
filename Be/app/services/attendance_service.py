@@ -9,23 +9,39 @@ from app.models import Attendance , Deducation , PayrollDeducation , Payroll
 from app.extencions import db
 import uuid
 from sqlalchemy import and_, or_
+from datetime import datetime
+# def calculate_work_hours_and_overtime(time_in, time_out):
+#     if time_in and time_out:
+#         # Chuyển đổi time_in và time_out thành datetime
+#         today = datetime.today()
+#         time_in_datetime = datetime.combine(today, time_in)
+#         time_out_datetime = datetime.combine(today, time_out)
 
+#         # Tính toán thời gian làm việc
+#         work_duration = time_out_datetime - time_in_datetime
+#         work_hours = work_duration.total_seconds() / 3600  # Chuyển đổi giây thành giờ
+
+#         # Tính overtime
+#         total_overtime = round(work_hours / 8, 2) - 1 if work_hours > 8 else None
+#         return round(work_hours / 8, 2), total_overtime
+#     return None, None
 def calculate_work_hours_and_overtime(time_in, time_out):
+    from datetime import datetime, time as dt_time
+
+    def to_time_str(t):
+        if isinstance(t, dt_time):
+            return t.strftime("%H:%M:%S")
+        return t
+
     if time_in and time_out:
-        # Chuyển đổi time_in và time_out thành datetime
-        today = datetime.today()
-        time_in_datetime = datetime.combine(today, time_in)
-        time_out_datetime = datetime.combine(today, time_out)
-
-        # Tính toán thời gian làm việc
-        work_duration = time_out_datetime - time_in_datetime
-        work_hours = work_duration.total_seconds() / 3600  # Chuyển đổi giây thành giờ
-
-        # Tính overtime
-        total_overtime = round(work_hours / 8, 2) - 1 if work_hours > 8 else None
-        return round(work_hours / 8, 2), total_overtime
+        t_in_str = to_time_str(time_in)
+        t_out_str = to_time_str(time_out)
+        t_in = datetime.strptime(t_in_str, "%H:%M:%S")
+        t_out = datetime.strptime(t_out_str, "%H:%M:%S")
+        work_hours = (t_out - t_in).total_seconds() / 3600
+        overtime_hours = work_hours - 8 if work_hours > 8 else 0
+        return round(work_hours, 2), round(overtime_hours, 2) if overtime_hours >= 1 else None
     return None, None
-
 class AttendanceService:   
     @staticmethod 
     def  upload_attendance_file(file):
@@ -155,6 +171,32 @@ class AttendanceService:
                     filtered_records.append(record)
                     unique_keys.add(key)
             attendance_records = filtered_records
+            employee_ids = set(record["employee_id"] for record in attendance_records)
+
+            # Tạo danh sách tất cả các ngày làm việc trong tháng (thứ 2-6)
+            all_dates = []
+            for day in range(1, number_of_days + 1):
+                d = datetime(year, month, day)
+                if d.weekday() < 5:  # 0-4 là thứ 2-6
+                    all_dates.append(d.strftime("%Y-%m-%d"))
+
+            for emp_id in employee_ids:
+                # Lấy các ngày đã có chấm công của nhân viên này
+                emp_dates = set(
+                    record["attendance_date"] for record in attendance_records if record["employee_id"] == emp_id
+                )
+                # Thêm bản ghi nghỉ không phép cho ngày chưa có chấm công
+                for d in all_dates:
+                    if d not in emp_dates:
+                        attendance_records.append({
+                            "attendance_date": d,
+                            "time_in": None,
+                            "time_out": None,
+                            "note": "Nghỉ không phép",
+                            "employee_id": emp_id,
+                            "attendance_status_id": 3,  # hoặc 1 nếu bạn muốn đánh dấu là nghỉ không phép
+                        })
+
             for record in attendance_records:
                 attendance = Attendance(
                     id=str(uuid.uuid4()), 
@@ -279,18 +321,21 @@ class AttendanceService:
         # Chuyển đổi các bản ghi thành danh sách dictionary
             result_data = []
             for record in attendance_records:
-                work_hours, total_overtime = calculate_work_hours_and_overtime(record.time_in, record.time_out)
-                record_dict = { 
-                    "id": record.id,
-                    "attendance_date": record.attendance_date.strftime('%Y-%m-%d'),
-                    "time_in": record.time_in.strftime('%H:%M:%S') if record.time_in else None,
-                    "time_out": record.time_out.strftime('%H:%M:%S') if record.time_out else None,
-                    "total_overtime": record.total_overtime,
-                    "note": record.note,
-                    "employee_id": record.employee_id,
-                    "attendance_status_id": record.attendance_status_id,
-                    "workHours" : work_hours
-                }
+                work_hours, total_overtime = calculate_work_hours_and_overtime(
+                        record.time_in.strftime('%H:%M:%S') if record.time_in else None,
+                        record.time_out.strftime('%H:%M:%S') if record.time_out else None
+                    )
+                record_dict = {
+                        "id": record.id,
+                        "attendance_date": record.attendance_date.strftime('%Y-%m-%d'),
+                        "time_in": record.time_in.strftime('%H:%M:%S') if record.time_in else None,
+                        "time_out": record.time_out.strftime('%H:%M:%S') if record.time_out else None,
+                        "total_overtime": total_overtime,
+                        "note": record.note,
+                        "employee_id": record.employee_id,
+                        "attendance_status_id": record.attendance_status_id,
+                        "workHours": work_hours
+                    }
                 result_data.append(record_dict)
             return Success(
                 message="Lấy danh sách chấm công thành công",
