@@ -21,19 +21,19 @@ class AuthService:
         isUsernameExits = db.session.query(Account).filter_by(username=username, isActived = True).first()
         
         if not isUsernameExits: 
-            error = Error("Username not correct", 400)
-            return error.to_json(), 400
+            return Error("Tài khoản không chính xác", 400).to_json() , 400
+            
 
         password_db = cipher.decrypt(isUsernameExits.password).decode()
         user_id = isUsernameExits.id
         print(password , password_db)
         if password != password_db: 
-            error = Error("Password not correct", 400)
-            return error.to_json(), 400
+            return  Error("Mật khẩu không chính xác", 400).to_json() , 400
+            
         
         access_token = create_access_token(identity=user_id)
 
-        response = make_response(Success(message="Login successfully", payload={'token': access_token}, status=200).to_json())
+        response = make_response(Success(message="Đăng nhập thành công", payload={'token': access_token}, status=200).to_json())
         
         # set_access_cookies(response, access_token, max_age=60*60*24*7) # 7 days
         response.set_cookie(
@@ -51,7 +51,7 @@ class AuthService:
 
     @staticmethod
     def logout():
-        response = Success(message="Logout successfully", status=200).to_json()
+        response = Success(message="Đăng xuất thành công", status=200).to_json()
         unset_jwt_cookies(response)
         return response, 200
 
@@ -67,7 +67,7 @@ class AuthService:
     
         account = db.session.query(Account).filter_by(id=id).first()
         if not account: 
-            error = Error("User not found", 400)
+            error = Error("Không tìm thấy người dùng", 400)
             return error.to_json(), 400
         
         info = db.session.query(Employee).filter_by(id=id).first()
@@ -75,7 +75,8 @@ class AuthService:
         if 'username' in data_json:
             account.username = data_json['username']
         if 'password' in data_json:
-            account.password = generate_password_hash(data_json['password'])  # Hash mật khẩu trước khi lưu
+            bytePassword = data_json['password'].encode('utf-8')
+            account.password = cipher.encrypt(bytePassword) 
         if 'isActived' in data_json:
             account.isActived = data_json['isActived']
         if 'role_id' in data_json:
@@ -93,10 +94,10 @@ class AuthService:
         
         try: 
             db.session.commit()
-            return Success(message="Update successfully", payload={}, status=200).to_json()
+            return Success(message="Cập nhật thành công", payload={}, status=200).to_json() , 200
         except Exception as e: 
             db.session.rollback()
-            return Error("Update failed", 400).to_json(), 400
+            return Error("Cập nhật thất bại", 400).to_json(), 400
 
 
 

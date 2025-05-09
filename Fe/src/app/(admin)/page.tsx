@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import React from "react";
-
+import React, { useEffect } from "react";
+import { notFound } from "next/navigation";
 import UserTable from "@/components/tables/UserTable";
-
+import { useAuth } from "@/context/AuthContext";
 export const metadata: Metadata = {
   title:
     "DLM DIGITAL",

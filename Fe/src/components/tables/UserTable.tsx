@@ -29,11 +29,11 @@ export default function UserTable() {
     });
     return res.data.payload
 }
-  const {data : users, error, isLoading , mutate , isValidating} = useSWR('http://127.0.0.1:5000/api/user/all' , fetcher , { 
-    revalidateOnFocus: false,      // Tắt khi focus
-    revalidateOnReconnect: true,   // Bật khi kết nối lại
-    revalidateIfStale: false,      // Tắt revalidate tự động dữ liệu cũ
-    revalidateOnMount: true, 
+  const {data : users, error, isLoading , mutate , isValidating} = useSWR(user?.role === 1 ?'http://127.0.0.1:5000/api/user/all' : null , fetcher , { 
+    // revalidateOnFocus: false,      // Tắt khi focus
+    // revalidateOnReconnect: true,   // Bật khi kết nối lại
+    // revalidateIfStale: tr,      // Tắt revalidate tự động dữ liệu cũ
+    // revalidateOnMount: true, 
   })
   
   const handleAddUser = () => {
@@ -45,65 +45,54 @@ export default function UserTable() {
   const inputRef = useRef<HTMLInputElement>(null);
   const handleSave = async (userData : Partial<User>) => {  // Xử lý lưu người dùng mới ở đây
       const token = Cookies.get('access_token_cookie')
+
       console.log(userData);
-      
-      const response = await axios.post('http://127.0.0.1:5000/api/user/create', 
-        userData
-    , { 
-      withCredentials: true,
-      headers: {
-        'Authorization': `Bearer ${token}`
-      } 
-    })
-    console.log(response.data); // Kiểm tra phản hồi từ API
-    
-    if(response.status === 200) {
-      await mutate()
-      toast.success("Thêm người dùng thành công")
-    }
-    closeModal(); // Đóng modal sau khi lưu người dùng mới
+     
+     try {
+        // Gọi API thêm user
+        const response = await axios.post(
+          'http://127.0.0.1:5000/api/user/create', 
+          userData, 
+          { 
+            withCredentials: true,
+            headers: {
+              'Authorization': `Bearer ${token}`
+            } 
+          }
+        );
+        
+        // Nếu thành công thì cập nhật dữ liệu và đóng modal
+        if (response.status === 200) {
+          await mutate();
+          toast.success("Thêm người dùng thành công");
+          closeModal(); // Chỉ đóng modal khi thành công
+        } else {
+          // Trường hợp status không phải 200 nhưng không có error
+          toast.error(response.data.message);
+          // Không đóng modal
+        }
+      } catch (error) {
+        // Xử lý lỗi từ API
+        if (axios.isAxiosError(error) && error.response) {
+          const errorMessage = error.response.data.message;
+          toast.error(errorMessage);
+        } else {
+          toast.error("Có lỗi xảy ra khi thêm người dùng");
+        }}
   }
-
-//  useEffect(() => {
-//     const fetchUsers = async () => {
-//       try {
-//         setLoading(true);
-//         const token = Cookies.get('access_token_cookie')
-//         const data = await axios.get('http://127.0.0.1:5000/api/user/all',{ 
-//           withCredentials: true,
-//            headers: {
-//               'Authorization': `Bearer ${token}`
-//             }
-//         })
-//         const usersData = data.data.payload || [] // Lấy dữ liệu người dùng từ phản hồi
-//         if(usersData !== null) { 
-//           setUsers(usersData);
-//         }
-//         setLoading(false);
-
-//     } catch (error) {
-//         console.log(error)     
-//     }finally {
-       
-//         setLoading(false);
-//     }
-    
-//     }
-//     fetchUsers();
-//     },[])
 
   return ( 
     <>
-    <div className='flex justify-between items-center mb-4'>
-    <SearchBar />
+    <div className='flex justify-end items-center mb-4'>
+    {/* <SearchBar /> */}
     <Button onClick={handleAddUser} className=''>+ Thêm mới</Button>
     </div>
 
-    {/* Hiển thị lỗi nếu có */}
-    {/* {error && <div className="text-red-500">Có lỗi xảy ra: {error.message}</div>} */}
     
     {/* Hiển thị dữ liệu khi sẵn sàng */}
-    {users && !isLoading &&  !error && (<BasicTableOne users={users} mutate={mutate}/>)}
+    <div className="w-full">
+      {users && !isLoading &&  !error && (<BasicTableOne users={users} mutate={mutate}/>)}
+    </div>
     
     {/* Hiển thị indicator khi đang revalidate */}
     {isValidating && !isLoading && (

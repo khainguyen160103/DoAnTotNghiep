@@ -14,6 +14,7 @@ export interface User{
     created_at?: string
     work_status: string
     role_id: number
+    position: string
 }
 export interface AuthState { 
     user: User | null

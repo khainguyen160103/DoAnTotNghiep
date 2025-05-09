@@ -38,7 +38,8 @@ export default function RootLayout({
               pauseOnFocusLoss
               draggable
               pauseOnHover
-              theme="light" />
+              theme="light"
+              style={{ zIndex: 100000 }} />
               </SidebarProvider>
           </ThemeProvider>
           </AuthGuard>

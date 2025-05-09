@@ -8,7 +8,7 @@ class Employee(db.Model):
     id: Mapped[str] = mapped_column(VARCHAR(10), primary_key=True)
     fullname: Mapped[str] = mapped_column(VARCHAR(50),nullable=False)
     email: Mapped[str] = mapped_column(VARCHAR(50),nullable=False)
-    employee_type:Mapped[str] = mapped_column(VARCHAR(50),nullable=False,default="onboarded")
+    employee_type:Mapped[str] = mapped_column(VARCHAR(50),nullable=False,default="Full-time")
     work_status: Mapped[str] = mapped_column(VARCHAR(50),nullable=False,default="active")
 
     # foreign key with position

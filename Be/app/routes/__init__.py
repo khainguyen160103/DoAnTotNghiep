@@ -7,6 +7,7 @@ from .formSubmission_routes import bpForm
 from .attendance_routes import bpAttendance
 from .dayoff_routes import Bpdayoff
 from .payroll_routes import bpPayroll
+from .report_routes import bpReport
 
 # create parent blueprint with prefix url is /api 
 api_bp = Blueprint('api', __name__ , url_prefix='/api')
@@ -19,3 +20,4 @@ api_bp.register_blueprint(bpAttendance, url_prefix="/attendance")
 api_bp.register_blueprint(bpForm, url_prefix="/form")
 api_bp.register_blueprint(Bpdayoff, url_prefix="/dayoff")
 api_bp.register_blueprint(bpPayroll, url_prefix="/payroll")
+api_bp.register_blueprint(bpReport, url_prefix="/reports")

@@ -9,12 +9,14 @@ interface VerticallyCenteredModalProps {
   isOpen: boolean;
   handleCloseModal: () => void;
   handleConfirmDelete: (confirm : boolean) => void;
+  message?: string;
 }
 
 export const  VerticallyCenteredModal : React.FC<VerticallyCenteredModalProps> = ({
   isOpen,
   handleCloseModal,
-  handleConfirmDelete
+  handleConfirmDelete,
+  message
 }) => {
   // const { openModal, closeModal } = useModal();
   const handleSave = () => {
@@ -31,7 +33,7 @@ export const  VerticallyCenteredModal : React.FC<VerticallyCenteredModalProps> =
       >
         <div className="text-center">
           <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90 sm:text-title-sm">
-            Bạn có chắc chắn muốn xóa không?
+           {message ? message : "Bạn có chắc chắn muốn xóa không?"} 
           </h4>
           <div className="flex items-center justify-center w-full gap-3 mt-8">
             <Button size="sm"  onClick={handleCloseModal}>

@@ -7,14 +7,15 @@ import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import Cookies from "js-cookie";
-
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 
 
 export default function UserDropdown() {
-  const {user , logout } = useAuth()
+  const {user  } = useAuth()
   const [isOpen, setIsOpen] = useState(false);
   const [isLogout, setIsLogout] = useState(false);
-
+  const router = useRouter()
 function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
   e.stopPropagation();
   setIsOpen((prev) => !prev);
@@ -28,18 +29,19 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
       <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
     );
   }
-  // const handleLogout = async () => {
-  //   const token = Cookies.get('access_token_cookie')
-  //   const res = await axios.post('http://127.0.0.1:5000/api/auth/logout', { }, { 
-  //     withCredentials: true,
-  //     headers: {
-  //       'Authorization': `Bearer ${token}`
-  //     }
-  //    })
-  //    if(res.data){ 
-  //     setIsLogout(true)
-  //    }
-    
+  const handleLogout = async () => {
+    const res = await axios.post('http://127.0.0.1:5000/api/auth/logout', { }, { 
+      withCredentials: true,
+     })
+     console.log(res);
+     if(res.status === 200) {
+      router.push('/login')
+      toast.success(res.data.message)
+     }
+     if(res.data){ 
+      setIsLogout(true)
+     }
+  }
      
   // } 
 
@@ -164,7 +166,7 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
           </li>
         </ul>
         <button
-          onClick={logout}
+          onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
         >
           <svg
@@ -182,7 +184,7 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
               fill=""
             />
           </svg>
-          Sign out
+          Đăng xuất
         </button>
       </Dropdown>
     </div>

@@ -20,18 +20,19 @@ import { toast } from "react-toastify";
 import useSWR, { mutate } from "swr";
 import axios from "axios";
 import Cookies from "js-cookie";
+import { ModalUpdateUser } from "../ui/modal/ModalUpdateUser";
 
 export default function BasicTableOne(props : {users: User[] , mutate: () => Promise<any>}) {
-  const { users , mutate} = props;
+  const { users: rawUsers , mutate} = props;
   const { isOpen: isOpenEdit, openModal: openModalEdit, closeModal: closeModalEdit } = useModal();
   const { isOpen: isOpenDelete, openModal: openModalDelete, closeModal: closeModalDelete } = useModal();
-  const [idSelected, setIdSelected] = useState<string | null>(null);
-
+  const [idSelected, setIdSelected] = useState<string | null>(null)
+  const token = Cookies.get('access_token_cookie')
+  
   const handleOpenModalEdit = (userID : string) => {
     setIdSelected(userID);
     openModalEdit();
 
-    
   };
   const handleOpenModalDelete = (userID : string) => {
     setIdSelected(userID);
@@ -70,76 +71,100 @@ export default function BasicTableOne(props : {users: User[] , mutate: () => Pro
     console.log("Save button clicked");
     closeModalEdit();
   };
+ const users = [...rawUsers].sort((a, b) => {
+  // Xử lý trường hợp created_at là undefined
+  if (!a.created_at) return 1;  // Đẩy mục không có ngày xuống dưới
+  if (!b.created_at) return -1;
+  
+  // Chuyển đổi chuỗi thời gian thành đối tượng Date
+  const dateA = new Date(a.created_at); // Giờ đây created_at chắc chắn là string
+  const dateB = new Date(b.created_at);
+  
+  // So sánh ngược lại (b - a) để sắp xếp mới nhất lên đầu
+  return dateB.getTime() - dateA.getTime();
+});
   const userSelected = Array.isArray(users) && idSelected ? 
     users.find((user) => user.id === idSelected) : null;
-  const hasUsers = Array.isArray(users) && users.length > 0;
-  console.log(users);
-  
+  const hasUsers = Array.isArray(users) && users.length > 0;;
+  // console.log(userSelected);
+
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-      <div className="max-w-full overflow-x-auto">
-        <div className="min-w-[1102px]">
-         { hasUsers ?  <Table>
+      <div className="w-full overflow-x-auto">
+        <div >
+         { hasUsers ?  <Table className="min-w-[1200px]" >
             {/* Table Header */}
              <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
               <TableRow>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
+                  className="px-8 py-3 font-bold text-xs text-gray-700  uppercase bg-gray-100  dark:bg-gray-700    text-center  dark:text-gray-400"
                 >
-                  Mã NV
+                  Mã nhân viên
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
+                  className="px-8 py-3 font-bold text-xs text-gray-700  uppercase bg-gray-100  dark:bg-gray-700    text-center  dark:text-gray-400"
                 >
                   Họ Tên
                 </TableCell>
+                 <TableCell
+                  isHeader
+                  className="px-8 py-3 font-bold text-xs text-gray-700  uppercase bg-gray-100  dark:bg-gray-700    text-center  dark:text-gray-400"
+                >
+                  Email
+                </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
+                  className="px-8 py-3 font-bold text-xs text-gray-700  uppercase bg-gray-100 dark:bg-gray-700    text-center  dark:text-gray-400"
                 >
                   Username
                 </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
+                  className="px-8 py-3 font-bold text-xs text-gray-700  uppercase bg-gray-100 dark:bg-gray-700    text-center  dark:text-gray-400"
                 >
                   Password
                 </TableCell>
                   <TableCell
                   isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
+                  className="px-8 py-3 font-bold text-xs text-gray-700  uppercase bg-gray-100 dark:bg-gray-700    text-center  dark:text-gray-400"
                 >
                   Ngày tạo  
                 </TableCell>
                   <TableCell
                   isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
+                  className=" py-3 font-bold text-xs text-gray-700  uppercase bg-gray-100 dark:bg-gray-700    text-center  dark:text-gray-400"
                 >
                   Trạng thái tài khoản
                 </TableCell>
                   <TableCell
                   isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
+                  className="px-8 py-3 font-bold text-xs text-gray-700  uppercase bg-gray-100 dark:bg-gray-700    text-center  dark:text-gray-400"
                 >
                   Quyền
                 </TableCell>
                   <TableCell
                   isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
+                  className="py-3 font-bold text-xs text-gray-700  uppercase bg-gray-100 dark:bg-gray-700    text-center  dark:text-gray-400"
                 >
                   Trạng thái làm việc 
                 </TableCell>
                   <TableCell
                   isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
+                  className="px-8 py-3 font-bold text-xs text-gray-700  uppercase bg-gray-100 dark:bg-gray-700    text-center  dark:text-gray-400"
                 >
                   Loại nhân viên
                 </TableCell>
+                 <TableCell
+                  isHeader
+                  className="px-8 py-3 font-bold text-xs text-gray-700  uppercase bg-gray-100  dark:bg-gray-700    text-center  dark:text-gray-400"
+                >
+                 Vị trí
+                </TableCell>
                 <TableCell
                   isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
+                  className="px-8 py-3 font-bold text-xs text-gray-700  uppercase bg-gray-100 dark:bg-gray-700    text-center  dark:text-gray-400"
                 >
                   Tác vụ
                 </TableCell>
@@ -153,7 +178,7 @@ export default function BasicTableOne(props : {users: User[] , mutate: () => Pro
               {users.map((user) => (
                
                 <TableRow key={user['id']}>
-                  <TableCell className="px-5 py-4 sm:px-6 text-center">
+                  <TableCell className="px-8 py-4 sm:px-6 text-center">
                     <div className="flex items-center">
                       <div className="w-10 h-10 overflow-hidden rounded-full">
                       </div>
@@ -164,30 +189,38 @@ export default function BasicTableOne(props : {users: User[] , mutate: () => Pro
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
+                  <TableCell className="px-8 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                     {user.fullname}
                   </TableCell>
-                  <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
+                  <TableCell className="px-8 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
+                    {user.email}
+                  </TableCell>
+                  <TableCell className="px-8 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                     {user.username}
                   </TableCell>
-                  <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
+                  <TableCell className="px-8 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                     {user.password}
                   </TableCell>
-                  <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
+                  <TableCell className="px-8 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                     {user.created_at}
                   </TableCell>
-                  <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                    {user.isActived ? 'True': 'False'}
+                  <TableCell className="px-8 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
+                    <Badge color={user.isActived ? "primary" : "warning"}>
+                      {user.isActived ? 'Hoạt động': 'Đã hủy'}
+                    </Badge>
                   </TableCell>  
-                   <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
+                   <TableCell className="px-8 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                     {user.role}
                   </TableCell> 
-                  <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                    {user.work_status}
+                  <TableCell className="px-8 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
+                    {user.work_status === 'active' ? "Đang làm" : "Nghỉ việc"}
                   </TableCell> 
-                    <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
+                    <TableCell className="px-8 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                     {user.employee_type}
                   </TableCell> 
+                  <TableCell className="px-8 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
+                    {user.position}
+                  </TableCell>
                   <TableCell className=" flex justify-center px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                     <Button onClick={() => handleOpenModalEdit(user.id)}  variant="outline" size="sm" className="mr-2">
                        <svg
@@ -223,7 +256,7 @@ export default function BasicTableOne(props : {users: User[] , mutate: () => Pro
                             />
                           </svg>
                     </Button>
-                    {userSelected && isOpenEdit && (<ModalUser isOpen={isOpenEdit} handleSave={handleSave} handleCloseModal={handleCloseModalEdit} user={userSelected}/> )}
+                    {userSelected && isOpenEdit && (<ModalUpdateUser mutate={mutate} isOpen={isOpenEdit} handleSave={handleSave} handleCloseModal={handleCloseModalEdit} user={userSelected}/> )}
                     <Button onClick={() => handleOpenModalDelete(user.id)} variant="outline" size="sm">
                       <svg
                             width="16"
@@ -256,7 +289,7 @@ export default function BasicTableOne(props : {users: User[] , mutate: () => Pro
                             />
                           </svg>
                     </Button>
-                   {userSelected && isOpenDelete  && (<VerticallyCenteredModal isOpen={isOpenDelete} handleCloseModal={handleCloseModalDelete} handleConfirmDelete={handleConfirmDelete}/>)}
+                   {userSelected && isOpenDelete  && (<VerticallyCenteredModal message="Bạn có chắc chắn muốn ẩn tài khoản này" isOpen={isOpenDelete} handleCloseModal={handleCloseModalDelete} handleConfirmDelete={handleConfirmDelete}/>)}
                   </TableCell> 
                 </TableRow>
                 

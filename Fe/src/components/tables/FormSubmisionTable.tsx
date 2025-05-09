@@ -18,13 +18,14 @@ import { toast } from "react-toastify";
 import Spinner from "../ui/spinner/spinner"; // Adjust the path based on your project structure
 import {VerticallyCenteredModal} from "../ui/modal/VerticallyCenteredModal";
 import Cookies from "js-cookie";
-
+import { useAuth } from "@/context/AuthContext";
 export default function FormSubmisstion(props: { data: FormSubmissionData;isloading : boolean; mutate: () => Promise<any> }) {
   const { data, mutate ,isloading } = props;
   const { letterLeaves, letterOvertimes, letterVertifications } = data;
   const { isOpen: isOpenDelete, openModal: openModalDelete, closeModal: closeModalDelete } = useModal();
   const { isOpen: isOpenEdit, openModal: openModalEdit, closeModal: closeModalEdit } = useModal();
   const [itemSelect, setItemSelect] = useState<FormData | null>(null);
+  const {user} = useAuth()
 
   const handleOpenModalEdit = async (id: string) => {
     try {
@@ -82,9 +83,11 @@ export default function FormSubmisstion(props: { data: FormSubmissionData;isload
 
     }
   } 
-  const sortedLetterOvertimes = [...letterOvertimes].sort(
-  (a, b) => new Date(b.create_at).getTime() - new Date(a.create_at).getTime()
-);
+  const sortedLetterOvertimes = Array.isArray(letterOvertimes) 
+    ? [...letterOvertimes].sort(
+        (a, b) => new Date(b.create_at).getTime() - new Date(a.create_at).getTime()
+      )
+    : [];
 
 const sortedLetterVertifications = [...letterVertifications].sort(
   (a, b) => new Date(b.create_at).getTime() - new Date(a.create_at).getTime()
@@ -105,7 +108,7 @@ const sortedLetterLeaves = [...letterLeaves].sort(
                   isHeader
                   className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
                 >
-                  Mã Đơn
+                  Người tạo
                 </TableCell>
                 <TableCell
                   isHeader
@@ -166,7 +169,46 @@ const sortedLetterLeaves = [...letterLeaves].sort(
                   </TableCell >
 
                    
+                  {user.role  === 1 && (
+                     <TableCell className="flex justify-center px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
+                     <Button onClick={() => handleOpenModalEdit(letter.id)}  variant="outline" size="sm" className="mr-2">
+                        <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="mr-1"
+                            >
+                              <path
+                                d="M13.7474 20.4429H21"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              <path
+                                fillRule="evenodd"
+                                clipRule="evenodd"
+                                d="M12.78 3.79479C13.5557 2.86779 14.95 2.73186 15.8962 3.49173C15.9485 3.53296 17.6295 4.83879 17.6295 4.83879C18.669 5.46719 18.992 6.80311 18.3494 7.82259C18.3153 7.87718 8.81195 19.7645 8.81195 19.7645C8.49578 20.1589 8.01583 20.3918 7.50291 20.3973L3.86353 20.4429L3.04353 16.9723C2.92866 16.4843 3.04353 15.9718 3.3597 15.5773L12.78 3.79479Z"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              <path
+                                d="M11.0208 6.00098L16.4731 10.1881"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                      </Button>
+                    {itemSelect && isOpenDelete  && (<VerticallyCenteredModal isOpen={isOpenDelete} handleCloseModal={handleCloseModalDelete} handleConfirmDelete={handleConfirmDelete}/>)}
 
+                  </TableCell>
+                  )}
                   <TableCell className="flex justify-center px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                      <Button onClick={() => handleOpenModalEdit(letter.id)}  variant="outline" size="sm" className="mr-2">
                         <svg
@@ -376,7 +418,7 @@ const sortedLetterLeaves = [...letterLeaves].sort(
                   </TableCell >
 
                    
-
+                    
                   <TableCell className="flex justify-center px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                      <Button onClick={() => handleOpenModalEdit(letter.id)}  variant="outline" size="sm" className="mr-2">
                         <svg

@@ -62,11 +62,11 @@ const navItemsAdmin: NavItem[] = [
     icon: <ListIcon />,
     path: "/submissionForm",
   },
-  //   {
-  //   name: "Quản lý lương",
-  //   icon: <ListIcon />,
-  //   path: "/payroll"
-  // },
+    {
+    name: "Quản lý lương",
+    icon: <ListIcon />,
+    path: "/payroll"
+  },
   {
     name: "Báo cáo thống kê",
     icon: <PageIcon />,
@@ -78,72 +78,61 @@ const navItemsAdmin: NavItem[] = [
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
-  const {isAdmin , isLoading, user} = useAuth()
+  const { isLoading, user } = useAuth();
+  
 
+  // Sử dụng useMemo với giá trị mặc định
   const { menuItems, isMenuReady } = useMemo(() => {
-   if (isLoading) {
-     return { menuItems: [], isMenuReady: false };
-   }
-   
-   return { 
-     menuItems: isAdmin() ? navItemsAdmin : navItemsUser,
-     isMenuReady: true 
-   };
- }, [isLoading, isAdmin])
-  const renderMenuItems = (
-    navItems: NavItem[],
-    menuType: "main" 
-  ) => (
-    <ul className="flex flex-col gap-4">
-      {navItems.map((nav, index) => (
-        <li key={nav.name}>
-          {nav.subItems ? (
-            <button
-              onClick={() => handleSubmenuToggle(index, menuType)}
-              className={`menu-item group  ${
-                openSubmenu?.type === menuType && openSubmenu?.index === index
-                  ? "menu-item-active"
-                  : "menu-item-inactive"
-              } cursor-pointer ${
-                !isExpanded && !isHovered
-                  ? "lg:justify-center"
-                  : "lg:justify-start"
-              }`}
-            >
-              <span
-                className={` ${
-                  openSubmenu?.type === menuType && openSubmenu?.index === index
-                    ? "menu-item-icon-active"
-                    : "menu-item-icon-inactive"
-                }`}
-              >
-                {nav.icon}
-              </span>
-              {(isExpanded || isHovered || isMobileOpen) && (
-                <span className={`menu-item-text`}>{nav.name}</span>
-              )}
-              {(isExpanded || isHovered || isMobileOpen) && (
-                <ChevronDownIcon
-                  className={`ml-auto w-5 h-5 transition-transform duration-200  ${
-                    openSubmenu?.type === menuType &&
-                    openSubmenu?.index === index
-                      ? "rotate-180 text-brand-500"
-                      : ""
-                  }`}
-                />
-              )}
-            </button>
-          ) : (
-            nav.path && (
-              <Link
-                href={nav.path}
+    // Nếu đang loading, trả về mảng rỗng và false
+    if (isLoading) {
+      return { menuItems: [], isMenuReady: false };
+    }
+    
+    // Nếu đã load xong, trả về menu items tương ứng
+    return {
+      menuItems: user?.role === 1 ? navItemsAdmin : navItemsUser,
+      isMenuReady: true
+    };
+  }, [isLoading, user]); // Chỉ phụ thuộc vào isLoading và isAdmin
+
+  const renderContent = () => {
+    // Nếu đang loading hoặc chưa sẵn sàng, hiển thị skeleton
+    if (isLoading || !isMenuReady) {
+      return (
+        <ul className="flex flex-col gap-4">
+          {Array(5).fill(0).map((_, index) => (
+            <li key={index} className="px-3">
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-24 animate-pulse"></div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
+    // Nếu đã load xong, hiển thị menu items
+    return (
+      <ul className="flex flex-col gap-4">
+        {menuItems.map((nav, index) => (
+          <li key={nav.name} className="px-3">
+            {nav.subItems ? (
+              <button
+                onClick={() => handleSubmenuToggle(index, "main")}
                 className={`menu-item group ${
-                  isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
+                  openSubmenu?.type === "main" && openSubmenu?.index === index
+                    ? "menu-item-active"
+                    : "menu-item-inactive"
+                } cursor-pointer ${
+                  !isExpanded && !isHovered
+                    ? "lg:justify-center"
+                    : "lg:justify-start"
                 }`}
               >
                 <span
                   className={`${
-                    isActive(nav.path)
+                    openSubmenu?.type === "main" && openSubmenu?.index === index
                       ? "menu-item-icon-active"
                       : "menu-item-icon-inactive"
                   }`}
@@ -151,89 +140,44 @@ const AppSidebar: React.FC = () => {
                   {nav.icon}
                 </span>
                 {(isExpanded || isHovered || isMobileOpen) && (
-                  <span className={`menu-item-text`}>{nav.name}</span>
+                  <span className="menu-item-text">{nav.name}</span>
                 )}
-              </Link>
-            )
-          )}
-          {nav.subItems && (isExpanded || isHovered || isMobileOpen) && (
-            <div
-              ref={(el) => {
-                subMenuRefs.current[`${menuType}-${index}`] = el;
-              }}
-              className="overflow-hidden transition-all duration-300"
-              style={{
-                height:
-                  openSubmenu?.type === menuType && openSubmenu?.index === index
-                    ? `${subMenuHeight[`${menuType}-${index}`]}px`
-                    : "0px",
-              }}
-            >
-              <ul className="mt-2 space-y-1 ml-9">
-                {nav.subItems.map((subItem) => (
-                  <li key={subItem.name}>
-                    <Link
-                      href={subItem.path}
-                      className={`menu-dropdown-item ${
-                        isActive(subItem.path)
-                          ? "menu-dropdown-item-active"
-                          : "menu-dropdown-item-inactive"
-                      }`}
-                    >
-                      {subItem.name}
-                      <span className="flex items-center gap-1 ml-auto">
-                        {subItem.new && (
-                          <span
-                            className={`ml-auto ${
-                              isActive(subItem.path)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
-                            } menu-dropdown-badge `}
-                          >
-                            new
-                          </span>
-                        )}
-                        {subItem.pro && (
-                          <span
-                            className={`ml-auto ${
-                              isActive(subItem.path)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
-                            } menu-dropdown-badge `}
-                          >
-                            pro
-                          </span>
-                        )}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </li>
-      ))}
-    </ul>
-  );
-
-  const renderContent = () => {
-     if (!isMenuReady) {
-       return (
-         <ul className="flex flex-col gap-4">
-           {Array(5).fill(0).map((_, index) => (
-             <li key={index} className="px-3">
-               <div className="flex items-center gap-3">
-                 <div className="w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                 <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-24 animate-pulse"></div>
-               </div>
-             </li>
-           ))}
-         </ul>
-       );
-     }
-     
-     return renderMenuItems(menuItems, "main");
-   };
+                <ChevronDownIcon
+                  className={`ml-auto w-5 h-5 transition-transform duration-200 ${
+                    openSubmenu?.type === "main" && openSubmenu?.index === index
+                      ? "rotate-180 text-brand-500"
+                      : ""
+                  }`}
+                />
+              </button>
+            ) : (
+              nav.path && (
+                <Link
+                  href={nav.path}
+                  className={`menu-item group ${
+                    isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
+                  }`}
+                >
+                  <span
+                    className={`${
+                      isActive(nav.path)
+                        ? "menu-item-icon-active"
+                        : "menu-item-icon-inactive"
+                    }`}
+                  >
+                    {nav.icon}
+                  </span>
+                  {(isExpanded || isHovered || isMobileOpen) && (
+                    <span className="menu-item-text">{nav.name}</span>
+                  )}
+                </Link>
+              )
+            )}
+          </li>
+        ))}
+      </ul>
+    );
+  };
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -246,32 +190,6 @@ const AppSidebar: React.FC = () => {
 
   // const isActive = (path: string) => path === pathname;
    const isActive = useCallback((path: string) => path === pathname, [pathname]);
-
-  // useEffect(() => {
-  //   // Check if the current path matches any submenu item
-  //   let submenuMatched = false;
-  //   ["main", "others"].forEach((menuType) => {
-  //     const items = menuType === "main" ? navItems : othersItems;
-  //     items.forEach((nav, index) => {
-  //       if (nav.subItems) {
-  //         nav.subItems.forEach((subItem) => {
-  //           if (isActive(subItem.path)) {
-  //             setOpenSubmenu({
-  //               type: menuType as "main" | "others",
-  //               index,
-  //             });
-  //             submenuMatched = true;
-  //           }
-  //         });
-  //       }
-  //     });
-  //   });
-
-  //   // If no submenu item matches, close the open submenu
-  //   if (!submenuMatched) {
-  //     setOpenSubmenu(null);
-  //   }
-  // }, [pathname,isActive]);
 
   useEffect(() => {
     // Set the height of the submenu items when the submenu is opened

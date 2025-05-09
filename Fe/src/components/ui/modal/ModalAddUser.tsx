@@ -7,6 +7,7 @@ import {User} from "@/types/common"
 import { useState , useEffect} from "react"
 import { ChevronDownIcon } from "@/icons"
 import Select from "@/components/form/Select"
+import { toast } from "react-toastify"
 
 interface ModalAddUserProps {
     isOpen: boolean;
@@ -23,6 +24,12 @@ const positionOptions = [
     { value: "IT", label: "Phát Triển" },
 
   ];
+const employeeTypeOptions = [
+    { value: "Full-time", label: "Full-time" },
+    { value: "Part-time", label: "Part-time" },
+    { value: "Thực tập sin", label: "Thực tập sinh" },
+    { value: "Freelancer", label: "Freelancer" },
+]
 const roleOptions = [
     { value: "hr", label: "HR" },
     { value: "user", label: "User" },
@@ -42,16 +49,26 @@ export const ModalAddUser : React.FC<ModalAddUserProps> = ({
         }
     },[isOpen])
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {   
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => { 
+        console.log(e.target.value , e.target.name);
+          
         const { name, value } = e.target;
         setUserData((prevData) => ({ ...prevData, [name]: value })); // Cập nhật state khi có thay đổi trong input
     }
 
 
-    const handleSubmit = ( e: React.FormEvent) => {
-        e.preventDefault(); // Ngăn chặn hành vi mặc định của form
-        handleSave(userData); // Gọi hàm handleSave với dữ liệu người dùng đã cập nhật
-        handleCloseModal(); // Đóng modal sau khi lưu dữ liệu
+    const handleSubmit = ( e: React.FormEvent) => { 
+        e.preventDefault()
+        if(!userData.id || !userData.fullname || !userData.username || !userData.password || !userData.email) {
+            toast.error("Vui lòng điền đầy đủ thông tin" ,{ 
+                style: { 
+                    zIndex: "9999999999999 !important",
+
+                }
+            })
+        }else{ 
+            handleSave(userData); // Gọi hàm handleSave với dữ liệu người dùng đã cập nhật
+        }
      }
 
     const handleSelectChange = (value: string) => {
@@ -90,11 +107,18 @@ export const ModalAddUser : React.FC<ModalAddUserProps> = ({
                                 options={positionOptions}
                                 placeholder="Vị Trí"
                                 onChange={handleSelectChange}
-                                className="dark:bg-dark-900"
+                                className="dark:bg-dark-900 w-full"
                             />
-                            <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
-                                <ChevronDownIcon/>
-                                </span>
+                            </div>
+                    </div><div>
+                        <Label className="text-start">Loại nhân viên</Label>
+                         <div className="relative">
+                            <Select
+                                options={employeeTypeOptions}
+                                placeholder="Loại nhân viên"
+                                onChange={handleSelectChange}
+                                className="dark:bg-dark-900 w-full"
+                            />
                             </div>
                     </div>
                     <div>
@@ -103,13 +127,11 @@ export const ModalAddUser : React.FC<ModalAddUserProps> = ({
                          <div className="relative">
                             <Select
                                 options={roleOptions}
-                                placeholder="Vị Trí"
+                                placeholder="Quyền"
                                 onChange={handleSelectChange}
-                                className="dark:bg-dark-900"
+                                className="dark:bg-dark-900 w-full"
                             />
-                            <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
-                                <ChevronDownIcon/>
-                                </span>
+                            
                             </div>
                     </div>
                     </div>
