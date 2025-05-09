@@ -55,6 +55,18 @@ export interface FormSubmissionData {
   }>;
 }
 
+export interface SalaryData {
+  id: string;
+  base_salary: number;
+  month: string;
+  salary_addOn: number;
+  salary_another: number;
+  salary_ot: number;
+  salary_total: number;
+  total_attendance: number;
+  year: string;
+  employee_id: string;
+}
 
 export interface  FormData {
         create_at : string,

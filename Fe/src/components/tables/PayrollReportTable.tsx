@@ -21,29 +21,19 @@ import Cookies from "js-cookie";
 import { useAuth } from "@/context/AuthContext";
 import { User } from "@/types/common";
 import useSWR from 'swr';
+import { ModalCreatePayroll } from "../ui/modal/ModalCreatePayroll";
+import { PayrollSalaryModal } from "../ui/modal/PayrolSalaryModal";
+import { SalaryData } from "@/types/common";
 
-// Interface cho dữ liệu lương
-interface SalaryData {
-  id: string;
-  base_salary: number;
-  month: string;
-  salary_addon: number;
-  salary_another: number;
-  salary_ot: number;
-  salary_total: number;
-  total_attendance: number;
-  year: string;
-  employee_id: string;
-}
 
-// Interface cho nhân viên với dữ liệu lương
 interface EmployeeWithSalary {
   employee: User;
   salary: SalaryData | null;
 }
 
-export default function PayrollTable(props: { data: User[]; isloading: boolean; mutate: () => Promise<any> }) {
-  const { data: employees, mutate, isloading } = props;
+export default function PayrollTable(props: { selectMonth : number , selectYear: number , data: User[]; isloading: boolean; mutate: () => Promise<any> }) {
+  const { data: employees, mutate, isloading , selectMonth  , selectYear} = props;
+  console.log(selectMonth , selectYear);
   const { isOpen: isOpenDelete, openModal: openModalDelete, closeModal: closeModalDelete } = useModal();
   const { isOpen: isOpenEdit, openModal: openModalEdit, closeModal: closeModalEdit } = useModal();
   const { isOpen: isOpenCreate, openModal: openModalCreate, closeModal: closeModalCreate } = useModal();
@@ -53,6 +43,12 @@ export default function PayrollTable(props: { data: User[]; isloading: boolean; 
   const token = Cookies.get('access_token_cookie');
   const [employeesWithSalary, setEmployeesWithSalary] = useState<EmployeeWithSalary[]>([]);
 
+  const filteredEmployeesWithSalary = employeesWithSalary.map(({ employee, salary }) => ({
+    employee,
+    salary: salary && salary.month && salary.year
+      ? (Number(salary.month.split("-")[1]) === selectMonth && Number(salary.year) === selectYear ? salary : null)
+      : null
+  }));
   const fetcher = async (url: string) => {
     const response = await axios.get(url, {
       headers: {
@@ -162,6 +158,8 @@ export default function PayrollTable(props: { data: User[]; isloading: boolean; 
 
   // Xử lý tạo mới dữ liệu lương cho nhân viên
   const handleOpenCreateSalary = (employee: User) => {
+    console.log(employee);
+    
     setSelectedEmployee(employee);
     openModalCreate();
   };
@@ -173,17 +171,24 @@ export default function PayrollTable(props: { data: User[]; isloading: boolean; 
 
   const handleCreateSalary = async (formData: any) => {
     if (!selectedEmployee) return;
-
+    console.log(formData);
+    const monthString = `${formData.year}-${formData.month.toString().padStart(2, "0")}-01`;
+    const salary_total =
+        Number(formData.base_salary) +
+        Number(formData.salary_ot) +
+        Number(formData.salary_addOn) +
+        Number(formData.salary_another);
     try {
       const response = await axios.post('http://127.0.0.1:5000/api/payroll/create', {
         employee_id: selectedEmployee.id,
-        base_salary: parseFloat(formData.baseSalary),
-        month: formData.month,
-        year: formData.year,
-        total_attendance: parseInt(formData.totalAttendance),
-        salary_ot: parseFloat(formData.salaryOT) || 0,
-        salary_addon: parseFloat(formData.salaryAddon) || 0,
-        salary_another: parseFloat(formData.salaryAnother) || 0
+        base_salary: Number(formData.base_salary),
+        month: monthString,
+        year: Number(formData.year),
+        total_attendance: Number(formData.total_attendance),
+        salary_ot: Number(formData.salary_ot) || 0,
+        salary_addOn: Number(formData.salary_addOn) || 0,
+        salary_another: Number(formData.salary_another) || 0,
+        salary_total: salary_total
       }, {
         headers: { 'Authorization': `Bearer ${token}` },
         withCredentials: true
@@ -276,8 +281,8 @@ export default function PayrollTable(props: { data: User[]; isloading: boolean; 
               </TableBody>
             ) : (
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                {employeesWithSalary && employeesWithSalary.length > 0 ? (
-                  employeesWithSalary.map(({ employee, salary }) => (
+                {filteredEmployeesWithSalary && filteredEmployeesWithSalary.length > 0 ? (
+                  filteredEmployeesWithSalary.map(({ employee, salary }) => (
                     <TableRow key={employee.id}>
                       <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                         {employee.id}
@@ -295,7 +300,7 @@ export default function PayrollTable(props: { data: User[]; isloading: boolean; 
                         {salary ? formatCurrency(salary.salary_ot) : "—"}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                        {salary ? formatCurrency(salary.salary_addon) : "—"}
+                        {salary ? formatCurrency(salary.salary_addOn) : "—"}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                         {salary ? formatCurrency(salary.salary_another) : "—"}
@@ -308,9 +313,11 @@ export default function PayrollTable(props: { data: User[]; isloading: boolean; 
                         ) : "—"}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                        {salary ? (
-                          <div className="flex justify-center">
-                            <Button onClick={() => handleOpenModalEdit(salary.id)} variant="outline" size="sm" className="mr-2">
+                          <Button 
+                            onClick={() => handleOpenCreateSalary(employee)} 
+                            variant="outline" 
+                            size="sm"
+                          >
                               <svg
                                 width="16"
                                 height="16"
@@ -344,33 +351,7 @@ export default function PayrollTable(props: { data: User[]; isloading: boolean; 
                                 />
                               </svg>
                               Sửa
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button 
-                            onClick={() => handleOpenCreateSalary(employee)} 
-                            variant="primary" 
-                            size="sm"
-                          >
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="mr-1"
-                            >
-                              <path
-                                d="M12 4v16m8-8H4"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                            Khai báo lương
                           </Button>
-                        )}
                       </TableCell>
                     </TableRow>
                   ))
@@ -387,178 +368,20 @@ export default function PayrollTable(props: { data: User[]; isloading: boolean; 
         </div>
       </div>
 
-      {/* Modal chỉnh sửa */}
-      {itemSelect && isOpenEdit && (
-        <ModalUpdateForm
-          isOpen={isOpenEdit}
-          handleClose={handleCloseModalEdit}
-          handleSave={handleSave}
-          data={itemSelect}
-          mutate={mutate}
-        />
-      )}
-
       {/* Modal tạo mới dữ liệu lương */}
-      {selectedEmployee && isOpenCreate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg w-11/12 max-w-xl max-h-[90vh] overflow-y-auto">
-            <div className="p-4 flex justify-between border-b">
-              <h3 className="text-lg font-semibold">Khai báo lương - {selectedEmployee.fullname}</h3>
-              <button onClick={handleCloseCreateSalary} className="text-gray-500 hover:text-gray-700">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            </div>
-            <div className="p-4">
-              <SalaryCreateForm onSubmit={handleCreateSalary} onCancel={handleCloseCreateSalary} />
-            </div>
-          </div>
-        </div>
-      )}
+      <PayrollSalaryModal
+        isOpen={isOpenCreate}
+        employee={selectedEmployee}
+        onClose={handleCloseCreateSalary}
+        onSubmit={handleCreateSalary}
+        selectedMonth={selectMonth}
+        selectedYear={selectYear}
+        salary={
+          selectedEmployee && salaryData && Array.isArray(salaryData)
+            ? salaryData.find((s: SalaryData) => s.employee_id === selectedEmployee.id) || null
+            : null
+        }
+      />
     </div>
-  );
-}
-
-// Component form tạo mới dữ liệu lương
-function SalaryCreateForm({ onSubmit, onCancel }: { onSubmit: (data: any) => void; onCancel: () => void }) {
-  const [formData, setFormData] = useState({
-    baseSalary: "",
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear(),
-    totalAttendance: "22",
-    salaryOT: "0",
-    salaryAddon: "0",
-    salaryAnother: "0"
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="baseSalary" className="block text-sm font-medium text-gray-700 mb-1">
-            Lương cơ bản <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="number"
-            id="baseSalary"
-            name="baseSalary"
-            value={formData.baseSalary}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor="totalAttendance" className="block text-sm font-medium text-gray-700 mb-1">
-            Công chuẩn <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="number"
-            id="totalAttendance"
-            name="totalAttendance"
-            value={formData.totalAttendance}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
-            required
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="month" className="block text-sm font-medium text-gray-700 mb-1">
-            Tháng <span className="text-red-500">*</span>
-          </label>
-          <select
-            id="month"
-            name="month"
-            value={formData.month}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
-            required
-          >
-            {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
-              <option key={month} value={month}>Tháng {month}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">
-            Năm <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="number"
-            id="year"
-            name="year"
-            value={formData.year}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
-            required
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <label htmlFor="salaryOT" className="block text-sm font-medium text-gray-700 mb-1">
-            Lương tăng ca
-          </label>
-          <input
-            type="number"
-            id="salaryOT"
-            name="salaryOT"
-            value={formData.salaryOT}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
-          />
-        </div>
-        <div>
-          <label htmlFor="salaryAddon" className="block text-sm font-medium text-gray-700 mb-1">
-            Lương thêm
-          </label>
-          <input
-            type="number"
-            id="salaryAddon"
-            name="salaryAddon"
-            value={formData.salaryAddon}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
-          />
-        </div>
-        <div>
-          <label htmlFor="salaryAnother" className="block text-sm font-medium text-gray-700 mb-1">
-            Các khoản khác
-          </label>
-          <input
-            type="number"
-            id="salaryAnother"
-            name="salaryAnother"
-            value={formData.salaryAnother}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
-          />
-        </div>
-      </div>
-
-      <div className="flex justify-end space-x-3 pt-4 border-t">
-        <Button onClick={onCancel} variant="outline">
-          Hủy
-        </Button>
-        <Button variant="primary">
-          Lưu
-        </Button>
-      </div>
-    </form>
   );
 }
