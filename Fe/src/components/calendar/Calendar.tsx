@@ -74,7 +74,8 @@ const Calendar: React.FC<CalendarProps> = ({ onMonthYearChange , data , isLoadin
     if (dayOfWeek >= 1 && dayOfWeek <= 5) {
       allDays.push(currentDate.toISOString().split("T")[0]); // Chỉ lấy thứ 2 đến thứ 6
     }
-    currentDate.setDate(currentDate.getDate() + 1); // Tăng ngày lên 1
+    currentDate.setDate(currentDate.getDate() + 1); // T
+    // ăng ngày lên 1
   }
 
   return allDays;
@@ -86,25 +87,31 @@ const Calendar: React.FC<CalendarProps> = ({ onMonthYearChange , data , isLoadin
     return date.toISOString().split("T")[0];
   };  
   const handleDateSelect = (selectInfo: DateSelectArg) => {
-      
+    setEventStartTime(""); // Set thời gian vào là 0
+    setEventEndTime(""); 
     resetModalFields();
     setEventStartDate(selectInfo.startStr);
     setEventEndDate(selectInfo.endStr || selectInfo.startStr);
     openModal();
   };
-
+  function formatDateToYYYYMMDDLocal(date: Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
   const handleEventClick = (clickInfo: EventClickArg) => {
     
     const event = clickInfo.event;
-    const formattedDate = convertDateToYYYYMMDD(event.start!);
+    const formattedDate = event.start ? formatDateToYYYYMMDDLocal(event.start) : "";
     setSelectedDate(formattedDate);
     console.log("Ngày được chọn:", selectedDate); // Lưu ngày đã chọn vào state
   // Gán thông tin sự kiện vào state
     setSelectedEvent(event as unknown as CalendarEvent);
     const timeIn = event.extendedProps.timeIn;
     const timeOut = event.extendedProps.timeOut;   
-    setEventStartDate(event.start?.toISOString().split("T")[0] || ""); // Ngày bắt đầu
-    setEventEndDate(event.end?.toISOString().split("T")[0] || ""); // Ngày kết thúc
+    setEventStartDate(event.start ? formatDateToYYYYMMDDLocal(event.start) : "");
+    setEventEndDate(event.end ? formatDateToYYYYMMDDLocal(event.end) : "");// Ngày kết thúc
     setEventStartTime(event.extendedProps.timeIn); // Thời gian vào (HH:mm)
     setEventEndTime(event.extendedProps.timeOut); // Thời gian ra (HH:mm)
     setEventLevel(event.extendedProps.calendar || ""); 
@@ -122,7 +129,7 @@ const Calendar: React.FC<CalendarProps> = ({ onMonthYearChange , data , isLoadin
     // Cập nhật sự kiện hiện tại
     const updatedEvent = {
       id: selectedEvent.id,
-      attendance_date: selectedDate, // Ngày chấm công
+      attendance_date: selectedDate ? `${selectedDate}T00:00:00` : "", // Ngày chấm công
       time_in: eventStartTime, // Thêm giây vào thời gian vào
       time_out: eventEndTime, // Thêm giây vào thời gian ra
       note: selectedEvent.extendedProps.status, // Ghi chú
@@ -321,13 +328,13 @@ const Calendar: React.FC<CalendarProps> = ({ onMonthYearChange , data , isLoadin
             >
               Đóng
             </button>
-            {selectedEvent ? ( <button
+            {selectedEvent  && eventStartTime !== "" && eventEndTime !== "" && eventStartTime !== "00:00" && eventEndTime !== "00:00" ?( <button
               onClick={handleDeleteEvent}
               type="button"
               className="flex w-full justify-center rounded-lg border border-gray-300 bg-red-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto"
             >
               Xóa
-            </button>) : ""}
+            </button>) : null}
             <button
               onClick={handleAddOrUpdateEvent}
               type="button"
@@ -343,30 +350,63 @@ const Calendar: React.FC<CalendarProps> = ({ onMonthYearChange , data , isLoadin
   );
 };
 
-const renderEventContent = (eventInfo: EventContentArg) => {
-  const statusColorClass = eventInfo.event.extendedProps.calendar === "Danger"
-      ? "text-red-500"
-      : eventInfo.event.extendedProps.calendar === "Warning"
-      ? "text-yellow-500"
-      : eventInfo.event.extendedProps.calendar === "Success"
-      ? "text-green-500"
-      : "text-blue-500";
-  const colorClass = `fc-bg-${eventInfo.event.extendedProps.calendar.toLowerCase()}`;
-  return (
-    <div
-      className={`event-fc-color flex-col justify-center items-center flex fc-event-main p-1 rounded-sm`}
-    > 
-      <div className="flex fc-event-title  ">
-            <p className="mr-1 text-sm font-semibold text-gray-800"> {eventInfo.event.extendedProps.timeIn} </p> -
-            <p className="mr-1 text-sm font-semibold text-gray-800"> {eventInfo.event.extendedProps.timeOut} </p>
-            <span className="black"><TimeIcon  /></span>
+// const renderEventContent = (eventInfo: EventContentArg) => {
+//   const statusColorClass = eventInfo.event.extendedProps.calendar === "Danger"
+//       ? "text-red-500"
+//       : eventInfo.event.extendedProps.calendar === "Warning"
+//       ? "text-yellow-500"
+//       : eventInfo.event.extendedProps.calendar === "Success"
+//       ? "text-green-500"
+//       : "text-blue-500";
+//   const colorClass = `fc-bg-${eventInfo.event.extendedProps.calendar.toLowerCase()}`;
+//   return (
+//     <div
+//       className={`event-fc-color flex-col justify-center items-center flex fc-event-main p-1 rounded-sm`}
+//     > 
+//       <div className="flex fc-event-title  ">
+//             <p className="mr-1 text-sm font-semibold text-gray-800"> {eventInfo.event.extendedProps.timeIn} </p> -
+//             <p className="mr-1 text-sm font-semibold text-gray-800"> {eventInfo.event.extendedProps.timeOut} </p>
+//             <span className="black"><TimeIcon  /></span>
           
-      </div>
-      <div className="text-lg  text-gray-900 font-bold text-center">{eventInfo.event.extendedProps.workHours}</div>
-      <div className={`text-sm font-medium text-center ${statusColorClass}`}>{eventInfo.event.extendedProps.workHours < 1 ? "Đi muộn - Về sớm" : ""}</div>
+//       </div>
+//       <div className="text-lg  text-gray-900 font-bold text-center">{eventInfo.event.extendedProps.workHours}</div>
+//       <div className={`text-sm font-medium text-center ${statusColorClass}`}>{eventInfo.event.extendedProps.workHours < 1 ? "Đi muộn - Về sớm" : ""}</div>
 
+//     </div>
+//   );
+// };
+const renderEventContent = (eventInfo: EventContentArg) => {
+  const { timeIn, timeOut, workHours, calendar } = eventInfo.event.extendedProps;
+  const statusColorClass = calendar === "Danger"
+    ? "text-red-500"
+    : calendar === "Warning"
+    ? "text-yellow-500"
+    : calendar === "Success"
+    ? "text-green-500"
+    : "text-blue-500";
+
+  // Nếu timeIn hoặc timeOut null thì hiện "Nghỉ"
+  if (!timeIn || !timeOut) {
+    return (
+      <div className="event-fc-color flex-col justify-center items-center flex fc-event-main p-1 rounded-sm">
+        <div className="flex fc-event-title">
+          <p className="mr-1 text-sm font-semibold text-yellow-600">Nghỉ</p>
+        </div>
+        <div className="text-lg text-gray-900 font-bold text-center">{workHours ?? ""}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="event-fc-color flex-col justify-center items-center flex fc-event-main p-1 rounded-sm">
+      <div className="flex fc-event-title">
+        <p className="mr-1 text-sm font-semibold text-gray-800">{timeIn}</p> -
+        <p className="mr-1 text-sm font-semibold text-gray-800">{timeOut}</p>
+        <span className="black"><TimeIcon /></span>
+      </div>
+      <div className="text-lg text-gray-900 font-bold text-center">{workHours}</div>
+      <div className={`text-sm font-medium text-center ${statusColorClass}`}>{workHours < 1 ? "Đi muộn - Về sớm" : ""}</div>
     </div>
   );
 };
-
 export default Calendar;
