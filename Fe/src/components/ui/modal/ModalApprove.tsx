@@ -11,7 +11,7 @@ import { DateEnv } from "@fullcalendar/core/internal";
 import DatePicker from "@/components/form/date-picker";
 import { toast } from "react-toastify";
 
-interface ModalFormEditProps {
+interface ModalApproveFormProps {
   isOpen: boolean;
   handleClose: () => void;
   handleSave: (updatedData: any) => void;
@@ -19,7 +19,7 @@ interface ModalFormEditProps {
   mutate: () => Promise<any>;
 }
 
-const ModalUpdateForm: React.FC<ModalFormEditProps> = ({
+export const ModalApprve: React.FC<ModalApproveFormProps> = ({
   isOpen,
   handleClose,
   handleSave,
@@ -53,19 +53,13 @@ const ModalUpdateForm: React.FC<ModalFormEditProps> = ({
   }
 
   console.log("formState", formState);
-  const handleSubmit = async () => {
+  const handleApprove = async () => {
     try {
       // Gọi API PATCH để cập nhật dữ liệu
       await axios.patch(
         `http://127.0.0.1:5000/api/form/update/${formState.id}`,
         {
-          title: formState.title,
-          request_date: formState.request_date,
-          start_at: formState.start_at,
-          end_at: formState.end_at,
-          note: formState.note,
-          employee_id: formState.employee_id,
-          letter_status_id : formState.letter_status_id,
+          letter_status_id :3,
         },
         { withCredentials: true }
       );
@@ -83,7 +77,30 @@ const ModalUpdateForm: React.FC<ModalFormEditProps> = ({
       console.error("Lỗi khi cập nhật dữ liệu:", error);
     }
   };
+  const handleRefuse = async () => {
+    try {
+      // Gọi API PATCH để cập nhật dữ liệu
+      await axios.patch(
+        `http://127.0.0.1:5000/api/form/update/${formState.id}`,
+        {
+          letter_status_id :1,
+        },
+        { withCredentials: true }
+      );
 
+      // Gọi mutate để làm mới dữ liệu từ SWR
+      await mutate();
+
+      // Gọi hàm handleSave để xử lý dữ liệu sau khi lưu
+      handleSave(formState);
+       toast.success("Cập nhật thành công!");
+
+      // Đóng modal
+      handleClose();
+    } catch (error) {
+      console.error("Lỗi khi cập nhật dữ liệu:", error);
+    }
+  };
   return (
     <Modal className="max-w-[600px] p-5 lg:p-10" isOpen={isOpen} onClose={handleClose}>
       <div className="p-4">
@@ -91,6 +108,7 @@ const ModalUpdateForm: React.FC<ModalFormEditProps> = ({
         <div className="mb-4">
           <Label className="block text-sm font-medium text-gray-700">Tiêu đề</Label>
           <Input
+            readonly
             type="text"
             name="title"
             value={formState.title}
@@ -101,6 +119,7 @@ const ModalUpdateForm: React.FC<ModalFormEditProps> = ({
         <div className="mb-4">
           <Label className="block text-sm font-medium text-gray-700">Ghi chú</Label>
           <TextArea
+            readonly
             value={formState.note}
             onChange={(value :string) => handleAreaChange("note", value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm"
@@ -109,6 +128,7 @@ const ModalUpdateForm: React.FC<ModalFormEditProps> = ({
         <div className="mb-4">
           <Label className="block mb-2">Ngày bắt đầu</Label>
             <Input
+                readonly
               type="datetime-local"
               name="start_at"
               value={toDatetimeLocal(formState.start_at)}
@@ -119,6 +139,7 @@ const ModalUpdateForm: React.FC<ModalFormEditProps> = ({
         <div className="mb-4">
          <Label className="block mb-2">Ngày kết thúc</Label>
           <Input
+          readonly
             type="datetime-local"
             name="start_at"
             value={toDatetimeLocal(formState.end_at)}
@@ -127,16 +148,14 @@ const ModalUpdateForm: React.FC<ModalFormEditProps> = ({
           />
         </div>
         <div className="flex justify-end">
-          <Button variant="outline" size="sm" onClick={handleClose} className="mr-2">
-            Hủy
+          <Button variant="outline" size="sm" onClick={handleRefuse} className="mr-2">
+            Từ chối 
           </Button>
-          <Button variant="primary" size="sm" onClick={handleSubmit}>
-            Lưu
+          <Button variant="primary" size="sm" onClick={handleApprove}>
+            Duyệt 
           </Button>
         </div>
       </div>
     </Modal>
   );
 };
-
-export default ModalUpdateForm;

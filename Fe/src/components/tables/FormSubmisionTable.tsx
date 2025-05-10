@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useEffect,  useState } from "react";
 import Button from "../ui/button/Button";
 import {
   Table,
@@ -19,14 +19,52 @@ import Spinner from "../ui/spinner/spinner"; // Adjust the path based on your pr
 import {VerticallyCenteredModal} from "../ui/modal/VerticallyCenteredModal";
 import Cookies from "js-cookie";
 import { useAuth } from "@/context/AuthContext";
+import useSWR from "swr";
+import { ModalApprve } from "../ui/modal/ModalApprove";
+
 export default function FormSubmisstion(props: { data: FormSubmissionData;isloading : boolean; mutate: () => Promise<any> }) {
   const { data, mutate ,isloading } = props;
+  const [approveModalOpen, setApproveModalOpen] = useState(false);
+  const [selectedLetter, setSelectedLetter] = useState<FormData | null>(null);
   const { letterLeaves, letterOvertimes, letterVertifications } = data;
+  const { isOpen: isOpenApprove, openModal: openModalApprove, closeModal: closeModalApprove } = useModal();
+  
   const { isOpen: isOpenDelete, openModal: openModalDelete, closeModal: closeModalDelete } = useModal();
   const { isOpen: isOpenEdit, openModal: openModalEdit, closeModal: closeModalEdit } = useModal();
   const [itemSelect, setItemSelect] = useState<FormData | null>(null);
+  const [userMap, setUserMap] = useState<Record<string, string>>({});
   const {user} = useAuth()
-
+  // const {data: userData , isLoading: isUserLoading , error : isUserError, } = useSWR(`http://127.0.0.1:5000/api/user/${data.id}`, async (url) => {
+  console.log(data)
+  useEffect(() => {
+    const ids = [
+      ...new Set([
+        ...letterLeaves.map(l => l.employee_id),
+        ...letterOvertimes.map(l => l.employee_id),
+        ...letterVertifications.map(l => l.employee_id),
+      ]),
+    ];
+    Promise.all(
+      ids.map(id =>
+        axios.get(`http://127.0.0.1:5000/api/user/${id}` ,{ 
+          withCredentials: true,
+          headers: {
+            'Authorization': `Bearer ${Cookies.get('access_token_cookie')}`
+          }
+        }).then(res => ({
+          id,
+          name: res.data.payload.fullname,
+        }))
+      )
+    ).then(results => {
+      const map: Record<string, string> = {};
+      results.forEach(({ id, name }) => {
+        map[id] = name;
+      });
+      setUserMap(map);
+    });
+  }, [letterLeaves, letterOvertimes, letterVertifications]);
+  console.log(userMap["HR1"])
   const handleOpenModalEdit = async (id: string) => {
     try {
       const res = await axios.get(`http://127.0.0.1:5000/api/form/all/${id}`, {
@@ -41,7 +79,20 @@ export default function FormSubmisstion(props: { data: FormSubmissionData;isload
       toast.error("Có lỗi xảy ra khi tải dữ liệu");
     }
   };
-
+  const handleOpenModalApprove = async (id: string) => {
+    try {
+      const res = await axios.get(`http://127.0.0.1:5000/api/form/all/${id}`, {
+        withCredentials: true,
+      });
+      if (res.status === 200) {
+        setItemSelect(res.data.payload); // Lưu dữ liệu form được chọn
+        openModalApprove(); // Mở modal
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast.error("Có lỗi xảy ra khi tải dữ liệu");
+    }
+  };
   const handleCloseModalEdit = () => {
     setItemSelect(null); // Xóa dữ liệu form được chọn
     closeModalEdit(); // Đóng modal
@@ -93,6 +144,20 @@ const sortedLetterVertifications = [...letterVertifications].sort(
   (a, b) => new Date(b.create_at).getTime() - new Date(a.create_at).getTime()
 );
 
+
+const handleApprove = async (id: string) => {
+  await axios.put(`http://127.0.0.1:5000/api/form/update-status/${id}`, { status: 3 }, { withCredentials: true });
+  setApproveModalOpen(false);
+  mutate();
+  toast.success("Đã duyệt đơn!");
+};
+
+const handleReject = async (id: string) => {
+  await axios.put(`http://127.0.0.1:5000/api/form/update-status/${id}`, { status: 1 }, { withCredentials: true });
+  setApproveModalOpen(false);
+  mutate();
+  toast.success("Đã từ chối đơn!");
+};
 const sortedLetterLeaves = [...letterLeaves].sort(
   (a, b) => new Date(b.create_at).getTime() - new Date(a.create_at).getTime()
 );
@@ -142,7 +207,7 @@ const sortedLetterLeaves = [...letterLeaves].sort(
               {!isloading && sortedLetterOvertimes.map((letter) => (
                 <TableRow key={letter.id}>
                   <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                    {letter.id}
+                  {userMap[letter.employee_id]}
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                     <Badge color="primary" variant="light" size="md">
@@ -169,8 +234,8 @@ const sortedLetterLeaves = [...letterLeaves].sort(
                   </TableCell >
 
                    
-                  {user.role  === 1 && (
                      <TableCell className="flex justify-center px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
+                  {user.role  === 3 && letter.letter_status_id === 2  &&(
                      <Button onClick={() => handleOpenModalEdit(letter.id)}  variant="outline" size="sm" className="mr-2">
                         <svg
                               width="16"
@@ -204,13 +269,14 @@ const sortedLetterLeaves = [...letterLeaves].sort(
                                 strokeLinejoin="round"
                               />
                             </svg>
-                      </Button>
+                 
+                      </Button> )}
                     {itemSelect && isOpenDelete  && (<VerticallyCenteredModal isOpen={isOpenDelete} handleCloseModal={handleCloseModalDelete} handleConfirmDelete={handleConfirmDelete}/>)}
 
                   </TableCell>
-                  )}
                   <TableCell className="flex justify-center px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                     <Button onClick={() => handleOpenModalEdit(letter.id)}  variant="outline" size="sm" className="mr-2">
+                     {user?.role === 3 && letter.letter_status_id === 2 && letter.employee_id === user.id && 
+                     (<Button onClick={() => handleOpenModalEdit(letter.id)}  variant="outline" size="sm" className="mr-2">
                         <svg
                               width="16"
                               height="16"
@@ -243,8 +309,9 @@ const sortedLetterLeaves = [...letterLeaves].sort(
                                 strokeLinejoin="round"
                               />
                             </svg>
-                      </Button>
+                      </Button>)}
                       {/* {userSelected && isOpenEdit && (<ModalUser isOpen={isOpenEdit} handleSave={handleSave} handleCloseModal={handleCloseModalEdit} user={userSelected}/> )} */}
+                      {user?.role === 3 && letter.letter_status_id === 2 && letter.employee_id === user.id && 
                       <Button onClick={() => handleOpenModalDelete(letter.id)} variant="outline" size="sm">
                         <svg
                               width="16"
@@ -276,7 +343,12 @@ const sortedLetterLeaves = [...letterLeaves].sort(
                                 strokeLinejoin="round"
                               />
                             </svg>
+                      </Button>}
+                      {user?.role === 1 && (
+                      <Button onClick={() => handleOpenModalApprove(letter.id)} variant="outline" size="sm">
+                        Xem & Duyệt
                       </Button>
+                    )}
                     {itemSelect && isOpenDelete  && (<VerticallyCenteredModal isOpen={isOpenDelete} handleCloseModal={handleCloseModalDelete} handleConfirmDelete={handleConfirmDelete}/>)}
 
                   </TableCell>
@@ -286,7 +358,7 @@ const sortedLetterLeaves = [...letterLeaves].sort(
               {!isloading && sortedLetterVertifications.map((letter) => (
                 <TableRow key={letter.id}>
                   <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                    {letter.id}
+                  {userMap[letter.employee_id] || letter.employee_id}
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                     <Badge color="dark" variant="light" size="md">
@@ -315,7 +387,8 @@ const sortedLetterLeaves = [...letterLeaves].sort(
                    
 
                   <TableCell className="flex justify-center px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                     <Button onClick={() => handleOpenModalEdit(letter.id)}  variant="outline" size="sm" className="mr-2">
+                  {user?.role === 3 && letter.letter_status_id === 2 && letter.employee_id === user.id && 
+                     (<Button onClick={() => handleOpenModalEdit(letter.id)}  variant="outline" size="sm" className="mr-2">
                         <svg
                               width="16"
                               height="16"
@@ -348,8 +421,10 @@ const sortedLetterLeaves = [...letterLeaves].sort(
                                 strokeLinejoin="round"
                               />
                             </svg>
-                      </Button>
+                      </Button>)
+                  }
                       {/* {userSelected && isOpenEdit && (<ModalUser isOpen={isOpenEdit} handleSave={handleSave} handleCloseModal={handleCloseModalEdit} user={userSelected}/> )} */}
+                       {user?.role === 3 && letter.letter_status_id === 2 && letter.employee_id === user.id && 
                       <Button onClick={() => handleOpenModalDelete(letter.id)} variant="outline" size="sm">
                         <svg
                               width="16"
@@ -381,7 +456,12 @@ const sortedLetterLeaves = [...letterLeaves].sort(
                                 strokeLinejoin="round"
                               />
                             </svg>
+                      </Button>}
+                      {user?.role === 1 && (
+                      <Button onClick={() => handleOpenModalApprove(letter.id)} variant="outline" size="sm">
+                        Xem & Duyệt
                       </Button>
+                    )}
                     {itemSelect && isOpenDelete  && (<VerticallyCenteredModal isOpen={isOpenDelete} handleCloseModal={handleCloseModalDelete} handleConfirmDelete={handleConfirmDelete}/>)}
 
                   </TableCell>
@@ -391,7 +471,7 @@ const sortedLetterLeaves = [...letterLeaves].sort(
               {!isloading && sortedLetterLeaves.map((letter) => (
                 <TableRow key={letter.id}>
                   <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                    {letter.id}
+                    {userMap[letter.employee_id] || letter.employee_id}
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                     <Badge color="light" variant="light" size="md">
@@ -420,6 +500,7 @@ const sortedLetterLeaves = [...letterLeaves].sort(
                    
                     
                   <TableCell className="flex justify-center px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
+                  {user?.role === 3 && letter.letter_status_id === 2 && letter.employee_id === user.id && 
                      <Button onClick={() => handleOpenModalEdit(letter.id)}  variant="outline" size="sm" className="mr-2">
                         <svg
                               width="16"
@@ -453,8 +534,9 @@ const sortedLetterLeaves = [...letterLeaves].sort(
                                 strokeLinejoin="round"
                               />
                             </svg>
-                      </Button>
+                      </Button>}
                       {/* {userSelected && isOpenEdit && (<ModalUser isOpen={isOpenEdit} handleSave={handleSave} handleCloseModal={handleCloseModalEdit} user={userSelected}/> )} */}
+                      {user?.role === 3 && letter.letter_status_id === 2 && letter.employee_id === user.id && 
                       <Button onClick={() => handleOpenModalDelete(letter.id)} variant="outline" size="sm">
                         <svg
                               width="16"
@@ -486,7 +568,12 @@ const sortedLetterLeaves = [...letterLeaves].sort(
                                 strokeLinejoin="round"
                               />
                             </svg>
-                      </Button>
+                      </Button>}
+                      {user?.role === 1 && (
+                        <Button onClick={() => handleOpenModalApprove(letter.id)} variant="outline" size="sm">
+                          Xem & Duyệt
+                        </Button>
+                      )}
                     {itemSelect && isOpenDelete  && (<VerticallyCenteredModal isOpen={isOpenDelete} handleCloseModal={handleCloseModalDelete} handleConfirmDelete={handleConfirmDelete}/>)}
 
                   </TableCell>
@@ -501,6 +588,15 @@ const sortedLetterLeaves = [...letterLeaves].sort(
       {itemSelect && isOpenEdit && (
         <ModalUpdateForm
           isOpen={isOpenEdit}
+          handleClose={handleCloseModalEdit}
+          handleSave={handleSave}
+          data={itemSelect}
+          mutate={mutate} // Truyền mutate để làm mới dữ liệu
+        />
+      )}
+      {itemSelect && isOpenApprove && (
+        <ModalApprve
+          isOpen={isOpenApprove}
           handleClose={handleCloseModalEdit}
           handleSave={handleSave}
           data={itemSelect}
