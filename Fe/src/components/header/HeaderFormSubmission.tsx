@@ -19,7 +19,6 @@ export const HeaderFormSubmission = ({ mutate }: HeaderDashboardProps) => {
   }
   return (
     <div className="flex items-center justify-between  py-2 ">     
-        <SearchBar />
 
         {!isAdmin() && <Button onClick={handleAddForm}>+ Thêm mới</Button>}
         <ModalAddForm isOpen={isOpen} onClose={closeModal} mutate={mutate} />
